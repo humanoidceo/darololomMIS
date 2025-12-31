@@ -9,6 +9,8 @@ import os
 
 from .models import Student, SchoolClass, Subject, Teacher
 from .forms import StudentForm, SchoolClassForm, SubjectForm, TeacherForm
+from .models import StudentScore
+from .forms import StudentScoreForm
 import json
 from django.utils.safestring import mark_safe
 
@@ -280,12 +282,32 @@ def class_create(request):
 	if request.method == 'POST':
 		form = SchoolClassForm(request.POST)
 		if form.is_valid():
-			form.save()
+			klass = form.save()
+			# handle semester value (posted as repeated/hidden field named 'semester')
+			sem_val = request.POST.get('semester')
+			if sem_val:
+				# convert Persian digits to ascii if necessary
+				def persian_to_ascii(s: str) -> str:
+					mapping = {'۰': '0', '۱': '1', '۲': '2', '۳': '3', '۴': '4', '۵': '5', '۶': '6', '۷': '7', '۸': '8', '۹': '9'}
+					return ''.join(mapping.get(ch, ch) for ch in s)
+				try:
+					num = int(persian_to_ascii(sem_val.strip()))
+				except Exception:
+					num = None
+				if num is not None:
+					from .models import Semester
+					sem_obj, _ = Semester.objects.get_or_create(number=num)
+					klass.semester = sem_obj
+					klass.save()
 			messages.success(request, 'صنف با موفقیت ثبت شد.')
 			return redirect(reverse('core:classes_list'))
 	else:
 		form = SchoolClassForm()
-	return render(request, 'core/class_form.html', {'form': form})
+	# provide existing semesters from DB so frontend can show them
+	from .models import Semester
+	semester_qs = Semester.objects.order_by('number')
+	semester_names = [{'value': str(s.number), 'label': str(s)} for s in semester_qs]
+	return render(request, 'core/class_form.html', {'form': form, 'semester_names': semester_names})
 
 
 def class_edit(request, pk):
@@ -294,12 +316,32 @@ def class_edit(request, pk):
 	if request.method == 'POST':
 		form = SchoolClassForm(request.POST, instance=klass)
 		if form.is_valid():
-			form.save()
+			klass = form.save()
+			sem_val = request.POST.get('semester')
+			if sem_val is not None:
+				def persian_to_ascii(s: str) -> str:
+					mapping = {'۰': '0', '۱': '1', '۲': '2', '۳': '3', '۴': '4', '۵': '5', '۶': '6', '۷': '7', '۸': '8', '۹': '9'}
+					return ''.join(mapping.get(ch, ch) for ch in s)
+				try:
+					num = int(persian_to_ascii(sem_val.strip()))
+				except Exception:
+					num = None
+				if num is not None:
+					from .models import Semester
+					sem_obj, _ = Semester.objects.get_or_create(number=num)
+					klass.semester = sem_obj
+				else:
+					klass.semester = None
+				klass.save()
 			messages.success(request, 'اطلاعات صنف با موفقیت بروزرسانی شد.')
 			return redirect(reverse('core:classes_list'))
 	else:
 		form = SchoolClassForm(instance=klass)
-	return render(request, 'core/class_form.html', {'form': form})
+	from .models import Semester
+	semester_qs = Semester.objects.order_by('number')
+	semester_names = [{'value': str(s.number), 'label': str(s)} for s in semester_qs]
+	selected_semester = str(klass.semester.number) if klass.semester else ''
+	return render(request, 'core/class_form.html', {'form': form, 'semester_names': semester_names, 'selected_semester': selected_semester})
 
 
 def class_delete(request, pk):
@@ -368,3 +410,90 @@ def dashboard(request):
 		'chart_json': chart_json,
 	}
 	return render(request, 'core/dashboard.html', context)
+
+
+def grade_entry(request):
+	"""Enter or update grades for a selected student across multiple subjects.
+
+	Frontend sends `student_id`, and arrays `subject_ids[]` and `scores[]`.
+	"""
+	students_qs = Student.objects.all().order_by('name')
+	# include semesters list per student for client-side filtering
+	# If the student object has no explicit semesters assigned, fall back to
+	# the semester of the SchoolClass with matching `class_name`.
+	students = []
+	for s in students_qs:
+		sems = list(s.semesters.values_list('number', flat=True)) if hasattr(s, 'semesters') else []
+		# fallback: determine semester from student's class_name -> SchoolClass.semester
+		if not sems:
+			try:
+				if s.class_name:
+					klass = SchoolClass.objects.filter(name=s.class_name).first()
+					if klass and klass.semester:
+						sems = [klass.semester.number]
+			except Exception:
+				# any unexpected issue -> keep sems empty
+				sems = []
+		students.append({
+			'id': s.id,
+			'display': f"{s.name} ({s.father_name})",
+			'semesters': sems,
+			'class_name': s.class_name or ''
+		})
+
+	subjects_qs = Subject.objects.order_by('name')
+	# include semester number for each subject
+	subjects = [{'id': sub.id, 'name': sub.name, 'semester': sub.semester} for sub in subjects_qs]
+
+	if request.method == 'POST':
+		student_id = request.POST.get('student_id')
+		if not student_id:
+			messages.error(request, 'لطفاً یک دانش‌آموز انتخاب کنید.')
+			return redirect(reverse('core:grade_entry'))
+		try:
+			student = Student.objects.get(pk=int(student_id))
+		except (Student.DoesNotExist, ValueError):
+			messages.error(request, 'دانش‌آموز انتخاب شده نامعتبر است.')
+			return redirect(reverse('core:grade_entry'))
+
+		subject_ids = request.POST.getlist('subject_ids[]') or request.POST.getlist('subject_ids')
+		scores = request.POST.getlist('scores[]') or request.POST.getlist('scores')
+
+		created = 0
+		updated = 0
+		errors = 0
+		# Pair up subject_ids and scores by index
+		for idx, sid in enumerate(subject_ids):
+			try:
+				sub_id = int(sid)
+			except ValueError:
+				errors += 1
+				continue
+			score_val = None
+			if idx < len(scores):
+				val = scores[idx].strip()
+				try:
+					if val == '':
+						score_val = None
+					else:
+						score_val = int(val)
+						if score_val < 0 or score_val > 100:
+							raise ValueError('score out of range')
+				except Exception:
+					errors += 1
+					continue
+
+			obj, created_flag = StudentScore.objects.update_or_create(
+				student=student, subject_id=sub_id,
+				defaults={'score': score_val}
+			)
+			if created_flag:
+				created += 1
+			else:
+				updated += 1
+
+		messages.success(request, f'عملیات ثبت نمرات انجام شد. ایجاد: {created} — بروزرسانی: {updated} — خطاها: {errors}')
+		return redirect(reverse('core:grade_entry'))
+
+	# GET
+	return render(request, 'core/grades_form.html', {'students': students, 'subjects': subjects})

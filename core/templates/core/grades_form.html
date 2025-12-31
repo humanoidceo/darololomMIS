@@ -1,0 +1,225 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="bg-white p-6 rounded-xl shadow-md ring-1 ring-gray-200">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h2 class="text-2xl font-bold">ثبت نمرات</h2>
+      <p class="text-sm text-gray-500">انتخاب دانش‌آموز، انتخاب مضامین و وارد کردن نمرات</p>
+    </div>
+    <div class="hidden sm:flex items-center gap-3">
+      <a href="{% url 'core:student_list' %}" class="text-sm text-blue-600 hover:underline">بازگشت به لیست دانش‌آموزان</a>
+    </div>
+  </div>
+
+  <form method="post" id="grades-form" class="space-y-4">
+    {% csrf_token %}
+
+    <div>
+      <label class="block text-sm font-medium text-gray-700">انتخاب دانش‌آموز</label>
+      <input type="text" id="student-display" placeholder="نام یا بخشی از نام را تایپ کنید" class="mt-1 block w-full rounded-md border-gray-300" autocomplete="off">
+      <input type="hidden" id="student-id" name="student_id">
+
+      <ul id="student-suggestions" class="absolute z-50 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow max-h-60 overflow-auto hidden" style="list-style:none;padding:0;margin:0;"></ul>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-700">مضامین (ابتدا یک دانش‌آموز انتخاب کنید)</label>
+      <div id="subjects-container" class="mt-2">
+        <p id="subjects-note" class="text-sm text-gray-500 mb-2">لطفاً ابتدا از فیلد "انتخاب دانش‌آموز" یک دانش‌آموز را انتخاب کنید تا مضامین مربوط به سمستر او نمایش داده شوند.</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 hidden" id="subjects-list">
+          {% for sub in subjects %}
+          <div class="flex items-center gap-3 p-2 border rounded-md subject-item" data-sub-id="{{ sub.id }}" data-sub-semester="{{ sub.semester }}">
+            <input type="checkbox" class="subject-checkbox" id="sub-{{ sub.id }}" data-sub-id="{{ sub.id }}" disabled>
+            <label for="sub-{{ sub.id }}" class="flex-1">{{ sub.name }} <span class="text-xs text-gray-400">(سمستر {{ sub.semester }})</span></label>
+            <input type="number" min="0" max="100" class="score-input w-24 border rounded px-2 py-1" placeholder="نمره" data-sub-id="{{ sub.id }}" disabled>
+          </div>
+          {% empty %}
+          <p class="text-sm text-gray-500">مضمون تعریف نشده است.</p>
+          {% endfor %}
+        </div>
+        <p id="no-subjects-message" class="text-sm text-red-500 hidden">برای این دانش‌آموز هیچ ماده‌ای در سمستر(ها) ثبت نشده است.</p>
+      </div>
+    </div>
+
+    <!-- hidden containers to be filled before submit -->
+    <div id="hidden-fields"></div>
+
+    <div class="pt-2 flex items-center gap-3">
+      <button type="submit" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md shadow">ثبت نمرات</button>
+      <a href="{% url 'core:dashboard' %}" class="inline-flex items-center gap-2 border border-gray-300 px-4 py-2 rounded-md text-gray-700">انصراف</a>
+    </div>
+  </form>
+</div>
+
+{% if students %}
+  {{ students|json_script:"studentsData" }}
+{% else %}
+  <script id="studentsData" type="application/json">[]</script>
+{% endif %}
+
+{% block extra_js %}
+<script>
+  (function(){
+  // Students list injected by view as JSON script. Read and parse it.
+  const rawStudents = document.getElementById('studentsData') && document.getElementById('studentsData').textContent;
+  let students = [];
+  try { students = rawStudents ? JSON.parse(rawStudents) : []; } catch(e) { students = []; }
+    const studentInput = document.getElementById('student-display');
+    const suggestions = document.getElementById('student-suggestions');
+    const studentIdField = document.getElementById('student-id');
+    const subjectsContainer = document.getElementById('subjects-container');
+    const subjectsList = document.getElementById('subjects-list');
+    const subjectsNote = document.getElementById('subjects-note');
+    const noSubjectsMsg = document.getElementById('no-subjects-message');
+
+    // Initially ensure subjects list hidden and checkboxes disabled (markup sets disabled),
+    // but make sure JS state is consistent.
+    function resetSubjectsVisibility(){
+      subjectsList.classList.add('hidden');
+      noSubjectsMsg.classList.add('hidden');
+      subjectsNote.classList.remove('hidden');
+      // disable and uncheck everything
+      const items = Array.from(document.querySelectorAll('.subject-item'));
+      items.forEach(it => {
+        it.style.display = 'none';
+        const cb = it.querySelector('.subject-checkbox');
+        const si = it.querySelector('.score-input');
+        if (cb){ cb.checked = false; cb.disabled = true; }
+        if (si){ si.value = ''; si.disabled = true; }
+      });
+    }
+
+    resetSubjectsVisibility();
+
+    function renderStudentList(list){
+      suggestions.innerHTML = '';
+      if (!list.length){ suggestions.classList.add('hidden'); return; }
+      list.forEach(s => {
+        const li = document.createElement('li');
+        li.className = 'px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm flex justify-between items-center';
+        li.textContent = s.display;
+        li.dataset.id = s.id;
+        li.addEventListener('click', function(){
+          studentInput.value = this.textContent;
+          studentIdField.value = this.dataset.id;
+          suggestions.classList.add('hidden');
+          // find selected student object to access semesters
+          const st = students.find(x => String(x.id) === String(this.dataset.id));
+          const sems = (st && st.semesters && st.semesters.length) ? st.semesters.map(Number) : [];
+          filterSubjectsBySemesters(sems);
+        });
+        suggestions.appendChild(li);
+      });
+      suggestions.classList.remove('hidden');
+    }
+
+    function filterSubjectsBySemesters(sems){
+      // sems: array of numbers; if empty -> student has no semesters assigned
+      const items = Array.from(document.querySelectorAll('.subject-item'));
+      // if student has no semesters, show message and keep list hidden
+      if (!sems || sems.length === 0){
+        subjectsList.classList.add('hidden');
+        noSubjectsMsg.classList.remove('hidden');
+        subjectsNote.classList.add('hidden');
+        // disable all controls
+        items.forEach(it => {
+          it.style.display = 'none';
+          const cb = it.querySelector('.subject-checkbox');
+          const si = it.querySelector('.score-input');
+          if (cb){ cb.checked = false; cb.disabled = true; }
+          if (si){ si.value = ''; si.disabled = true; }
+        });
+        return;
+      }
+
+      // show container and hide the instruction note
+      subjectsList.classList.remove('hidden');
+      subjectsNote.classList.add('hidden');
+      noSubjectsMsg.classList.add('hidden');
+
+      let anyVisible = false;
+      items.forEach(it => {
+        const s = Number(it.dataset.subSemester || it.getAttribute('data-sub-semester'));
+        const cb = it.querySelector('.subject-checkbox');
+        const si = it.querySelector('.score-input');
+        if (sems.includes(s)){
+          it.style.display = '';
+          if (cb){ cb.disabled = false; }
+          // keep score input disabled until checkbox checked
+          if (si){ si.disabled = true; si.value = ''; }
+          anyVisible = true;
+        } else {
+          // uncheck and disable inputs if hidden
+          if (cb){ cb.checked = false; cb.disabled = true; }
+          if (si){ si.value = ''; si.disabled = true; }
+          it.style.display = 'none';
+        }
+      });
+
+      if (!anyVisible){
+        subjectsList.classList.add('hidden');
+        noSubjectsMsg.classList.remove('hidden');
+      }
+    }
+
+    studentInput.addEventListener('input', function(){
+      const q = this.value.trim().toLowerCase();
+      if (!q){ suggestions.classList.add('hidden'); studentIdField.value = ''; resetSubjectsVisibility(); return; }
+      const matches = students.filter(s => s.display.toLowerCase().includes(q));
+      renderStudentList(matches.slice(0, 30));
+    });
+
+    document.addEventListener('click', function(e){ if (!suggestions.contains(e.target) && e.target !== studentInput) suggestions.classList.add('hidden'); });
+
+    // Subjects selection handling: enable score input when checkbox checked
+    // Use delegated listener in case checkboxes are toggled disabled->enabled
+    document.addEventListener('change', function(ev){
+      const el = ev.target;
+      if (el && el.classList && el.classList.contains('subject-checkbox')){
+        const id = el.dataset.subId;
+        const input = document.querySelector('.score-input[data-sub-id="'+id+'"]');
+        if (el.checked){ input.disabled = false; input.focus(); }
+        else { input.disabled = true; input.value = ''; }
+      }
+    });
+
+    // Before submit, collect selected subjects and scores into hidden inputs
+    const form = document.getElementById('grades-form');
+    form.addEventListener('submit', function(e){
+      // ensure a student selected
+      if (!studentIdField.value){
+        e.preventDefault();
+        alert('لطفاً یک دانش‌آموز را از پیشنهادها انتخاب کنید.');
+        studentInput.focus();
+        return false;
+      }
+      const hidden = document.getElementById('hidden-fields');
+      hidden.innerHTML = '';
+
+      const checkboxes = Array.from(document.querySelectorAll('.subject-checkbox'));
+      const selected = checkboxes.filter(c => c.checked && !c.disabled);
+      if (!selected.length){
+        if (!confirm('شما هیچ موضوعی انتخاب نکرده‌اید. مطمئن هستید که می‌خواهید ارسال کنید؟')){
+          e.preventDefault(); return false;
+        }
+      }
+
+      selected.forEach((c, idx) => {
+        const sid = c.dataset.subId;
+        const scoreInput = document.querySelector('.score-input[data-sub-id="'+sid+'"]');
+        const sVal = scoreInput ? scoreInput.value.trim() : '';
+        // create hidden inputs subject_ids[] and scores[] keeping order
+        const hi = document.createElement('input'); hi.type = 'hidden'; hi.name = 'subject_ids[]'; hi.value = sid; hidden.appendChild(hi);
+        const hs = document.createElement('input'); hs.type = 'hidden'; hs.name = 'scores[]'; hs.value = sVal; hidden.appendChild(hs);
+      });
+
+      // allow submission: server will validate values
+    });
+
+  })();
+</script>
+{% endblock %}
+
+{% endblock %}

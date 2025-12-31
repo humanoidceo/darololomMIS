@@ -24,10 +24,91 @@
         {% endif %}
       </div>
 
+      <div>
+        <label class="block text-sm font-medium text-gray-700">سمستر</label>
+        <div class="mt-1">
+          <input id="semester_search_input" type="text" placeholder="جستجو سمستر" class="block w-full rounded-md border-gray-300 border p-2" autocomplete="off">
+          <div id="selected_semester" class="mt-2"></div>
+        </div>
+      </div>
+
       <div class="pt-2 flex items-center gap-3">
         <button type="submit" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md shadow">ذخیره</button>
         <a href="{% url 'core:classes_list' %}" class="inline-flex items-center gap-2 border border-gray-300 px-4 py-2 rounded-md text-gray-700">انصراف</a>
       </div>
     </form>
+  {% if semester_names %}
+    {{ semester_names|json_script:"semesterNames" }}
+  {% else %}
+    <script id="semesterNames" type="application/json">[]</script>
+  {% endif %}
+
+{% block extra_js %}
+<script>
+  (function(){
+    // setup a single-select searchable combobox for semester
+    function setupSingleSelect(searchInputId, containerId, listScriptId, hiddenInputName, preselected){
+      const raw = document.getElementById(listScriptId) && document.getElementById(listScriptId).textContent;
+      let items = [];
+      try{ items = raw? JSON.parse(raw) : []; }catch(e){ items = []; }
+
+      const input = document.getElementById(searchInputId);
+      const container = document.getElementById(containerId);
+      if (!input || !container) return;
+
+      const suggestions = document.createElement('ul');
+      suggestions.className = 'absolute z-50 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow max-h-60 overflow-auto hidden';
+      suggestions.style.listStyle = 'none'; suggestions.style.padding = '0'; suggestions.style.margin = '0';
+      input.parentNode.style.position = 'relative';
+      input.parentNode.appendChild(suggestions);
+
+      function renderList(matches){
+        suggestions.innerHTML = '';
+        if (!matches.length){ suggestions.classList.add('hidden'); return; }
+        matches.slice(0,20).forEach(item => {
+          const li = document.createElement('li'); li.className = 'px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm';
+          const label = (typeof item === 'object' && item.label) ? item.label : item;
+          li.textContent = label;
+          li.addEventListener('click', function(){ selectItem(item); suggestions.classList.add('hidden'); input.value = ''; });
+          suggestions.appendChild(li);
+        });
+        suggestions.classList.remove('hidden');
+      }
+
+      function clearSelection(){ container.innerHTML = ''; const existing = document.querySelectorAll('input[name="'+hiddenInputName+'"]'); existing.forEach(e=>e.remove()); }
+
+      function selectItem(item){
+        clearSelection();
+        const value = (typeof item === 'object' && item.value) ? item.value : item;
+        const label = (typeof item === 'object' && item.label) ? item.label : item;
+        const tag = document.createElement('span'); tag.className='inline-flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-full text-sm'; tag.textContent=label;
+        const removeBtn = document.createElement('button'); removeBtn.type='button'; removeBtn.className='ml-2 text-xs text-red-600'; removeBtn.textContent='×';
+        const hidden = document.createElement('input'); hidden.type='hidden'; hidden.name = hiddenInputName; hidden.value = String(value);
+        removeBtn.addEventListener('click', function(){ clearSelection(); });
+        tag.appendChild(removeBtn); container.appendChild(tag); container.appendChild(hidden);
+      }
+
+      input.addEventListener('input', function(){
+        const q = this.value.trim().toLowerCase(); if (!q){ suggestions.classList.add('hidden'); return; }
+        const matches = items.filter(n => { const label = (typeof n==='object' && n.label)? n.label : n; return String(label).toLowerCase().includes(q); });
+        renderList(matches);
+      });
+
+      document.addEventListener('click', function(e){ if (!input.parentNode.contains(e.target)) suggestions.classList.add('hidden'); });
+
+      // prepopulate
+      try{ const pre = preselected || ''; if (pre){ const found = items.find(i => (typeof i==='object'? String(i.value)===String(pre) : String(i)===String(pre))); if (found) selectItem(found); else selectItem(pre); } }catch(e){}
+    }
+
+    const semesterNamesRaw = document.getElementById('semesterNames') && document.getElementById('semesterNames').textContent;
+    let semesterNames = [];
+    try{ semesterNames = semesterNamesRaw? JSON.parse(semesterNamesRaw): []; }catch(e){ semesterNames = []; }
+
+    const pre = (typeof selected_semester !== 'undefined') ? '{{ selected_semester|default:"" }}' : '';
+    // call setup with server-provided JSON
+    setupSingleSelect('semester_search_input','selected_semester','semesterNames','semester', pre);
+  })();
+</script>
+{% endblock %}
   </div>
 {% endblock %}

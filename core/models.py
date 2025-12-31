@@ -34,6 +34,9 @@ class Student(models.Model):
 	image = models.ImageField('عکس', upload_to='students/', blank=True, null=True)
 	created_at = models.DateTimeField('ایجاد شده در', auto_now_add=True)
 
+	# Allow assigning one or more semesters to a student (useful for filtering subjects)
+	semesters = models.ManyToManyField('Semester', verbose_name='سمسترها', blank=True)
+
 	class Meta:
 		verbose_name = 'دانش‌آموز'
 		verbose_name_plural = 'دانش‌آموزان'
@@ -45,6 +48,9 @@ class Student(models.Model):
 class SchoolClass(models.Model):
 	"""Model representing a school class (صنف)."""
 	name = models.CharField('نام صنف', max_length=255, unique=True)
+	# Optional link to a Semester object. Kept nullable to avoid
+	# forcing immediate backfills when adding the field.
+	semester = models.ForeignKey('Semester', verbose_name='سمستر', null=True, blank=True, on_delete=models.SET_NULL)
 	created_at = models.DateTimeField('ایجاد شده در', auto_now_add=True)
 
 	class Meta:
@@ -149,6 +155,23 @@ class Semester(models.Model):
 		}
 		return ''.join(persian_digits.get(ch, ch) for ch in str(self.number))
 
+
+class StudentScore(models.Model):
+	"""Model to store a student's score for a subject."""
+	student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='scores')
+	subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+	# Allow whole-number scores from 0..100; use PositiveSmallIntegerField
+	score = models.PositiveSmallIntegerField('نمره', null=True, blank=True)
+	created_at = models.DateTimeField('ایجاد شده در', auto_now_add=True)
+	updated_at = models.DateTimeField('بروزرسانی شده در', auto_now=True)
+
+	class Meta:
+		verbose_name = 'نمره دانش‌آموز'
+		verbose_name_plural = 'نمرات دانش‌آموزان'
+		unique_together = ('student', 'subject')
+
+	def __str__(self) -> str:
+		return f"{self.student} — {self.subject}: {self.score if self.score is not None else '—'}"
 
 def _to_persian(num: int) -> str:
 	"""Helper to convert an integer 1..9 to Persian numeral string."""

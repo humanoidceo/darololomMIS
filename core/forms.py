@@ -106,6 +106,21 @@ class TeacherForm(forms.ModelForm):
             'education_level': 'سویه تحصیلی',
             'id_number': 'نمبر تذکره',
         }
+
+
+class StudentScoreForm(forms.ModelForm):
+    class Meta:
+        from .models import StudentScore
+        model = StudentScore
+        fields = ['subject', 'score']
+        labels = {
+            'subject': 'مضمون',
+            'score': 'نمره',
+        }
+        widgets = {
+            'subject': forms.Select(attrs={'class': 'border border-gray-300 rounded px-2 py-1'}),
+            'score': forms.NumberInput(attrs={'class': 'border border-gray-300 rounded px-2 py-1 w-24', 'min': 0, 'max': 100}),
+        }
         widgets = {
             'permanent_address': forms.Textarea(attrs={'rows': 3}),
             'current_address': forms.Textarea(attrs={'rows': 3}),

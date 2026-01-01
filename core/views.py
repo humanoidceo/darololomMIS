@@ -14,7 +14,6 @@ from django.utils.safestring import mark_safe
 
 
 def student_create(request):
-	"""فرم ثبت دانش‌آموز جدید (فارسی)."""
 	if request.method == 'POST':
 		form = StudentForm(request.POST, request.FILES)
 		if form.is_valid():

@@ -2,66 +2,118 @@
 {% load static %}
 
 {% block content %}
-  <h1 class="text-2xl font-bold mb-4">داشبورد</h1>
+  <!-- Page Header -->
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-900 mb-2">داشبورد</h1>
+    <p class="text-gray-600">خلاصه آمار و اطلاعات سیستم مدیریت دارالعلوم</p>
+  </div>
 
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-    <!-- Students -->
-    <div class="bg-white p-4 rounded-xl shadow hover:shadow-md transform hover:-translate-y-1 transition">
-      <div class="flex items-center gap-4">
-        <div class="w-14 h-14 flex items-center justify-center rounded-full text-white" style="background: linear-gradient(135deg,#6EE7B7 0%,#3B82F6 100%);">
-          <i data-lucide="users" class="w-7 h-7"></i>
+  <!-- Stats Cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <!-- Students Card -->
+    <div class="group bg-white rounded-2xl shadow-soft hover:shadow-soft-lg border border-gray-100 p-6 transition-all duration-300 hover:-translate-y-1">
+      <div class="flex items-start justify-between mb-4">
+        <div class="p-3 bg-gradient-to-br from-emerald-500 to-blue-600 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+          <svg class="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
+          </svg>
         </div>
-        <div>
-          <div class="text-sm text-gray-500">کل دانش‌آموزان</div>
-          <div class="text-3xl font-semibold">{{ total_students }}</div>
+        <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-emerald-100 text-emerald-800">
+          فعال
+        </span>
+      </div>
+      <div>
+        <div class="text-sm font-medium text-gray-600 mb-1">کل دانش‌آموزان</div>
+        <div class="text-3xl font-bold text-gray-900">{{ total_students }}</div>
+        <div class="mt-2 flex items-center text-xs text-gray-500">
+          <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+          </svg>
+          ثبت شده در سیستم
         </div>
       </div>
     </div>
 
-    <!-- Teachers -->
-    <div class="bg-white p-4 rounded-xl shadow hover:shadow-md transform hover:-translate-y-1 transition">
-      <div class="flex items-center gap-4">
-        <div class="w-14 h-14 flex items-center justify-center rounded-full text-white" style="background: linear-gradient(135deg,#FDE68A 0%,#F97316 100%);">
-          <i data-lucide="user-check" class="w-7 h-7"></i>
+    <!-- Teachers Card -->
+    <div class="group bg-white rounded-2xl shadow-soft hover:shadow-soft-lg border border-gray-100 p-6 transition-all duration-300 hover:-translate-y-1">
+      <div class="flex items-start justify-between mb-4">
+        <div class="p-3 bg-gradient-to-br from-amber-400 to-orange-600 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+          <svg class="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/>
+          </svg>
         </div>
-        <div>
-          <div class="text-sm text-gray-500">کل اساتید</div>
-          <div class="text-3xl font-semibold">{{ total_teachers }}</div>
+        <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-orange-100 text-orange-800">
+          فعال
+        </span>
+      </div>
+      <div>
+        <div class="text-sm font-medium text-gray-600 mb-1">کل اساتید</div>
+        <div class="text-3xl font-bold text-gray-900">{{ total_teachers }}</div>
+        <div class="mt-2 flex items-center text-xs text-gray-500">
+          <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+          </svg>
+          ثبت شده در سیستم
         </div>
       </div>
     </div>
 
-    <!-- Subjects -->
-    <div class="bg-white p-4 rounded-xl shadow hover:shadow-md transform hover:-translate-y-1 transition">
-      <div class="flex items-center gap-4">
-        <div class="w-14 h-14 flex items-center justify-center rounded-full text-white" style="background: linear-gradient(135deg,#A78BFA 0%,#60A5FA 100%);">
-          <i data-lucide="book-open" class="w-7 h-7"></i>
+    <!-- Subjects Card -->
+    <div class="group bg-white rounded-2xl shadow-soft hover:shadow-soft-lg border border-gray-100 p-6 transition-all duration-300 hover:-translate-y-1">
+      <div class="flex items-start justify-between mb-4">
+        <div class="p-3 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+          <svg class="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"/>
+          </svg>
         </div>
-        <div>
-          <div class="text-sm text-gray-500">کل مضامین</div>
-          <div class="text-3xl font-semibold">{{ total_subjects }}</div>
+        <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-purple-100 text-purple-800">
+          فعال
+        </span>
+      </div>
+      <div>
+        <div class="text-sm font-medium text-gray-600 mb-1">کل مضامین</div>
+        <div class="text-3xl font-bold text-gray-900">{{ total_subjects }}</div>
+        <div class="mt-2 flex items-center text-xs text-gray-500">
+          <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+          </svg>
+          ثبت شده در سیستم
         </div>
       </div>
     </div>
 
-    <!-- Classes -->
-    <div class="bg-white p-4 rounded-xl shadow hover:shadow-md transform hover:-translate-y-1 transition">
-      <div class="flex items-center gap-4">
-        <div class="w-14 h-14 flex items-center justify-center rounded-full text-white" style="background: linear-gradient(135deg,#FCA5A5 0%,#F97316 100%);">
-          <i data-lucide="layers" class="w-7 h-7"></i>
+    <!-- Classes Card -->
+    <div class="group bg-white rounded-2xl shadow-soft hover:shadow-soft-lg border border-gray-100 p-6 transition-all duration-300 hover:-translate-y-1">
+      <div class="flex items-start justify-between mb-4">
+        <div class="p-3 bg-gradient-to-br from-rose-400 to-orange-600 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+          <svg class="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
+          </svg>
         </div>
-        <div>
-          <div class="text-sm text-gray-500">کل صنوف</div>
-          <div class="text-3xl font-semibold">{{ total_classes }}</div>
+        <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-rose-100 text-rose-800">
+          فعال
+        </span>
+      </div>
+      <div>
+        <div class="text-sm font-medium text-gray-600 mb-1">کل صنوف</div>
+        <div class="text-3xl font-bold text-gray-900">{{ total_classes }}</div>
+        <div class="mt-2 flex items-center text-xs text-gray-500">
+          <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+          </svg>
+          ثبت شده در سیستم
         </div>
       </div>
     </div>
   </div>
 
-  <div class="bg-white p-4 rounded shadow">
-    <h2 class="text-lg font-medium mb-2">تقسیم دانش‌آموزان براساس صنف</h2>
-    <p class="text-sm text-gray-500 mb-4">نمودار دایره‌ای درصد دانش‌آموزان در هر صنف</p>
-    <div class="max-w-md mx-auto">
+  <!-- Chart Section -->
+  <div class="bg-white rounded-2xl shadow-soft border border-gray-100 p-8">
+    <div class="mb-6">
+      <h2 class="text-xl font-bold text-gray-900 mb-1">تقسیم دانش‌آموزان براساس صنف</h2>
+      <p class="text-sm text-gray-500">نمودار دایره‌ای درصد دانش‌آموزان در هر صنف</p>
+    </div>
+    <div class="max-w-lg mx-auto">
       <canvas id="studentsPie" width="400" height="400"></canvas>
     </div>
   </div>

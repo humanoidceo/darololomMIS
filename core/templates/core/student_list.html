@@ -105,6 +105,13 @@
                   حذف
                 </button>
               </form>
+
+              <button type="button" data-student-id="{{ student.pk }}" class="btn-print-id-card inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm hover:shadow">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"/>
+                </svg>
+                چاپ ای دی کارت
+              </button>
             </div>
           </div>
         </div>
@@ -152,4 +159,259 @@
     </div>
     {% endif %}
   </div>
+
+  <!-- ID Card Modal -->
+<div id="idCardModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full animate-slide-up">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between p-4 border-b border-gray-200">
+        <h3 class="text-lg font-bold text-gray-900">کارت شناسایی دانش‌آموز</h3>
+        <button type="button" id="closeModalBtn" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+          <svg class="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- ID Card Content -->
+      <div class="p-6">
+        <div id="idCardContent" class="bg-white border-2 border-gray-300 rounded-xl overflow-hidden" style="width: 320px; height: 480px; margin: 0 auto;">
+          <!-- Card Header with Logo -->
+          <div class="bg-gradient-to-r from-primary-600 to-primary-700 p-4 text-center">
+            <div class="flex justify-center mb-2">
+              <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg">
+                <img src="{% url 'core:logo' %}" alt="لوگو" class="w-full h-full object-cover rounded-full" onerror="this.style.display='none'; this.parentElement.innerHTML='<svg class=\'w-10 h-10 text-primary-600\' fill=\'currentColor\' viewBox=\'0 0 20 20\'><path d=\'M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z\'/></svg>';">
+              </div>
+            </div>
+            <h4 class="text-white font-bold text-sm leading-tight">دارالعلوم عالی اسلامی</h4>
+            <p class="text-white text-xs opacity-90 mt-1">الحاج سید منصور نادری</p>
+          </div>
+
+          <!-- Student Photo -->
+          <div class="flex justify-center -mt-12 mb-4">
+            <div id="cardPhoto" class="w-24 h-24 rounded-full border-4 border-white shadow-xl bg-gradient-to-br from-primary-100 to-primary-200 flex items-center justify-center">
+              <svg class="w-12 h-12 text-primary-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
+              </svg>
+            </div>
+          </div>
+
+          <!-- Student Info -->
+          <div class="px-6 pb-6 space-y-3">
+            <div class="text-center mb-4">
+              <h5 id="cardName" class="text-xl font-bold text-gray-900">نام دانش‌آموز</h5>
+              <p class="text-xs text-gray-500 mt-1">کارت شناسایی</p>
+            </div>
+
+            <div class="bg-gray-50 rounded-lg p-3 space-y-2">
+              <div class="flex items-center justify-between text-sm border-b border-gray-200 pb-2">
+                <span class="text-gray-600 font-medium">نمبر شناسایی:</span>
+                <span id="cardId" class="text-gray-900 font-semibold">-</span>
+              </div>
+              
+              <div class="flex items-center justify-between text-sm border-b border-gray-200 pb-2">
+                <span class="text-gray-600 font-medium">نام پدر:</span>
+                <span id="cardFatherName" class="text-gray-900 font-semibold">-</span>
+              </div>
+              
+              <div class="flex items-center justify-between text-sm border-b border-gray-200 pb-2">
+                <span class="text-gray-600 font-medium">صنف:</span>
+                <span id="cardClassName" class="text-gray-900 font-semibold">-</span>
+              </div>
+              
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-gray-600 font-medium">سمسترها:</span>
+                <span id="cardSemesters" class="text-gray-900 font-semibold">-</span>
+              </div>
+            </div>
+
+            <!-- Signature Section -->
+            <div class="mt-6 pt-4 border-t border-gray-200 flex justify-between items-end text-xs">
+              <div class="text-center">
+                <div class="border-t border-gray-400 w-20 mb-1"></div>
+                <p class="text-gray-600">امضاء مدیر</p>
+              </div>
+              <div class="text-center">
+                <div class="border-t border-gray-400 w-20 mb-1"></div>
+                <p class="text-gray-600">امضاء دانش‌آموز</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card Footer -->
+          <div class="bg-gradient-to-r from-primary-600 to-primary-700 py-2 text-center">
+            <p class="text-white text-xs font-medium">سال تحصیلی ۱۴۰۴-۱۴۰۵</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="p-4 border-t border-gray-200 flex items-center justify-center gap-3">
+        <button type="button" id="printDirectBtn" class="inline-flex items-center gap-2 bg-success-600 hover:bg-success-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200">
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clip-rule="evenodd"/>
+          </svg>
+          چاپ مستقیم
+        </button>
+        <button type="button" id="printPDFBtn" class="inline-flex items-center gap-2 bg-danger-600 hover:bg-danger-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200">
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clip-rule="evenodd"/>
+          </svg>
+          ذخیره PDF
+        </button>
+      </div>
+    </div>
+  </div>
+
+<!-- Student Data (Hidden) -->
+<script id="studentsData" type="application/json">
+  [
+    {% for student in page_obj.object_list %}
+      {
+        "id": {{ student.pk }},
+        "name": "{{ student.name|escapejs }}",
+        "father_name": "{{ student.father_name|default:'-'|escapejs }}",
+        "class_name": "{{ student.class_name|default:'-'|escapejs }}",
+        "image_url": "{% if student.image %}{{ student.image.url }}{% endif %}",
+        "id_number": "{{ student.id_number|default:'-'|escapejs }}",
+        "semesters": "{{ student.get_semesters_display|default:'-'|escapejs }}"
+      }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ]
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<script>
+    let studentsData = [];
+    try {
+      const rawData = document.getElementById('studentsData');
+      studentsData = rawData ? JSON.parse(rawData.textContent) : [];
+    } catch(e) {
+      console.error('Failed to parse students data', e);
+    }
+
+    // Add event listener for all ID card buttons
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('.btn-print-id-card').forEach(function(button) {
+        button.addEventListener('click', function() {
+          const studentId = parseInt(this.getAttribute('data-student-id'));
+          openIdCard(studentId);
+        });
+      });
+
+      // Add event listeners for modal buttons
+      const closeBtn = document.getElementById('closeModalBtn');
+      if (closeBtn) {
+        closeBtn.addEventListener('click', closeIdCard);
+      }
+
+      const printDirectBtn = document.getElementById('printDirectBtn');
+      if (printDirectBtn) {
+        printDirectBtn.addEventListener('click', printIdCard);
+      }
+
+      const printPDFBtn = document.getElementById('printPDFBtn');
+      if (printPDFBtn) {
+        printPDFBtn.addEventListener('click', printToPDF);
+      }
+    });
+
+    function openIdCard(studentId) {
+      const student = studentsData.find(s => s.id === studentId);
+      if (!student) {
+        alert('اطلاعات دانش‌آموز یافت نشد');
+        return;
+      }
+
+      // Update card content
+      document.getElementById('cardName').textContent = student.name;
+      document.getElementById('cardId').textContent = student.id_number || student.id;
+      document.getElementById('cardFatherName').textContent = student.father_name;
+      document.getElementById('cardClassName').textContent = student.class_name;
+      document.getElementById('cardSemesters').textContent = student.semesters;
+
+      // Update photo
+      const photoDiv = document.getElementById('cardPhoto');
+      if (student.image_url) {
+        photoDiv.innerHTML = '<img src="' + student.image_url + '" alt="' + student.name + '" class="w-full h-full object-cover rounded-full">';
+      } else {
+        photoDiv.innerHTML = '<svg class="w-12 h-12 text-primary-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/></svg>';
+      }
+
+      // Show modal
+      document.getElementById('idCardModal').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeIdCard() {
+      document.getElementById('idCardModal').classList.add('hidden');
+      document.body.style.overflow = 'auto';
+    }
+
+    function printIdCard() {
+      const printContent = document.getElementById('idCardContent').cloneNode(true);
+      const printWindow = window.open('', '_blank');
+      
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html dir="rtl" lang="fa">
+        <head>
+          <meta charset="UTF-8">
+          <title>کارت شناسایی</title>
+          <script src="https://cdn.tailwindcss.com"><\/script>
+          <style>
+            @media print {
+              body { margin: 0; padding: 20px; }
+              @page { size: portrait; margin: 0; }
+            }
+            body { 
+              display: flex; 
+              justify-content: center; 
+              align-items: center; 
+              min-height: 100vh;
+              background: #f3f4f6;
+            }
+          <\/style>
+        </head>
+        <body>
+          ${printContent.outerHTML}
+        </body>
+        </html>
+      `);
+      
+      printWindow.document.close();
+      
+      setTimeout(() => {
+        printWindow.print();
+      }, 500);
+    }
+
+    function printToPDF() {
+      const element = document.getElementById('idCardContent');
+      const opt = {
+        margin: 10,
+        filename: 'student-id-card.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: [90, 140], orientation: 'portrait' }
+      };
+
+      html2pdf().set(opt).from(element).save();
+    }
+
+    // Close modal on outside click
+    document.getElementById('idCardModal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeIdCard();
+      }
+    });
+
+    // Close on Escape key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        closeIdCard();
+      }
+    });
+  </script>
 {% endblock %}

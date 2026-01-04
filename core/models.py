@@ -185,5 +185,14 @@ def teacher_get_persian_semesters(self) -> str:
 	return ' '.join(_to_persian(n) for n in nums)
 
 
+def student_get_semesters_display(self) -> str:
+	"""Return student's semesters as space-separated Persian numerals."""
+	nums = [s.number for s in self.semesters.all().order_by('number')]
+	if not nums:
+		return '-'
+	return ' '.join(_to_persian(n) for n in nums)
+
+
 # attach helper as method for convenience in templates
 Teacher.get_persian_semesters = teacher_get_persian_semesters
+Student.get_semesters_display = student_get_semesters_display

@@ -174,86 +174,83 @@
       </div>
 
       <!-- ID Card Content -->
+      <!-- ID Card Content -->
       <div class="p-6">
-        <div id="idCardContent" class="bg-white shadow-2xl overflow-hidden" style="width: 540px; height: 340px; margin: 0 auto; background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);">
-          <!-- Main Content - Horizontal Layout -->
-          <div class="flex h-full">
-            <!-- Left Side - Blue Header Section -->
-            <div class="w-48 bg-gradient-to-br from-blue-600 to-blue-800 p-5 flex flex-col items-center justify-between">
-              <!-- Logo -->
-              <div class="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-xl p-2">
-                <img src="{% url 'core:logo' %}" alt="لوگو" class="w-full h-full object-contain rounded-full" onerror="this.style.display='none'; this.parentElement.innerHTML='<svg class=\'w-14 h-14 text-blue-700\' fill=\'currentColor\' viewBox=\'0 0 20 20\'><path d=\'M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z\'/></svg>';">
+        <div id="idCardContent" class="bg-white shadow-2xl overflow-hidden" style="width: 440px; height: 620px; margin: 0 auto; direction: rtl;">
+          <!-- Vertical Layout matching sample - RTL Persian -->
+          <div class="flex flex-col h-full">
+            <!-- Orange Header Section - Solid Color like sample -->
+            <div class="relative" style="background-color: #E8572A; padding: 24px; padding-bottom: 80px;">
+              <!-- Logo Circle (top right for RTL) -->
+              <div class="absolute top-4 right-4 w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-lg">
+                <img src="{% url 'core:logo' %}" alt="لوگو" class="w-12 h-12 object-contain rounded-full" onerror="this.style.display='none';">
               </div>
-
-              <!-- Student Photo -->
-              <div id="cardPhoto" class="w-32 h-32 rounded-lg border-4 border-white shadow-xl bg-gray-100 flex items-center justify-center overflow-hidden">
-                <svg class="w-16 h-16 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
-                </svg>
-              </div>
-
-              <!-- Institution Name -->
-              <div class="text-center">
-                <h4 class="text-white font-bold text-sm leading-tight">دارالعلوم عالی اسلامی</h4>
-                <p class="text-blue-100 text-xs font-medium mt-1">الحاج سید منصور نادری</p>
+              
+              <!-- School Name in Persian -->
+              <div class="text-center text-white" style="margin-top: 8px;">
+                <h3 class="text-2xl font-extrabold" style="line-height: 1.4;">دارالعلوم عالی اسلامی</h3>
+                <h3 class="text-2xl font-extrabold" style="line-height: 1.4;">الحاج سید منصور نادری</h3>
               </div>
             </div>
 
-            <!-- Right Side - White Content Area -->
-            <div class="flex-1 bg-white p-6 flex flex-col justify-between">
-              <!-- Top Section -->
-              <div>
-                <!-- Card Type Badge -->
-                <div class="flex justify-center mb-4">
-                  <span class="inline-block bg-blue-600 text-white text-xs font-bold px-5 py-1.5 rounded-full">دارالعلوم عالی اسلامی الحاج سید منصور نادری</span>
+            <!-- White curved divider -->
+            <div class="relative" style="margin-top: -35px;">
+              <svg viewBox="0 0 440 50" class="w-full" preserveAspectRatio="none" style="height: 50px;">
+                <path d="M 0,50 Q 220,0 440,50 L 440,50 L 0,50 Z" fill="white"/>
+              </svg>
+            </div>
+
+            <!-- Student Photo (overlapping header and curve) -->
+            <div class="flex justify-center relative" style="margin-top: -95px; z-index: 10; margin-bottom: 20px;">
+              <div id="cardPhoto" class="rounded-full bg-gray-100 flex items-center justify-center overflow-hidden" style="width: 150px; height: 150px; border: 5px solid white; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+                <svg class="w-20 h-20 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
+                </svg>
+              </div>
+            </div>
+
+            <!-- White Content Area -->
+            <div class="flex-1 bg-white" style="padding: 0 32px 24px 32px;">
+              <!-- Student Name -->
+              <div class="text-center" style="margin-bottom: 24px;">
+                <h2 id="cardName" class="font-black uppercase" style="font-size: 32px; color: #E8572A; letter-spacing: 0.5px;">نام دانش‌آموز</h2>
+              </div>
+
+              <!-- Student Information - RTL Persian -->
+              <div dir="rtl" style="font-size: 17px;">
+                <div class="flex items-start" style="margin-bottom: 8px;">
+                  <span class="font-semibold text-gray-800" style="min-width: 140px;">صنف</span>
+                  <span class="font-semibold text-gray-900">:</span>
+                  <span id="cardClassName" class="font-bold text-gray-900 mr-2">-</span>
                 </div>
-
-                <!-- Student Name -->
-                <div class="text-center mb-5 pb-3 border-b-2 border-gray-200">
-                  <h5 id="cardName" class="text-2xl font-black text-gray-900">نام دانش‌آموز</h5>
+                <div class="flex items-start" style="margin-bottom: 8px;">
+                  <span class="font-semibold text-gray-800" style="min-width: 140px;">نام پدر</span>
+                  <span class="font-semibold text-gray-900">:</span>
+                  <span id="cardFatherName" class="font-bold text-gray-900 mr-2">-</span>
                 </div>
-
-                <!-- Student Info Grid -->
-                <div class="space-y-2.5">
-                  <div class="flex items-center justify-between bg-gray-50 rounded-lg p-3 border-r-4 border-blue-500">
-                    <div class="flex items-center gap-2.5">
-                      <div class="w-9 h-9 bg-blue-600 rounded-md flex items-center justify-center flex-shrink-0">
-                        <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                          <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm3 1h6v4H7V5zm6 6H7v2h6v-2z" clip-rule="evenodd"/>
-                        </svg>
-                      </div>
-                      <span class="text-sm text-gray-600 font-semibold">شماره شناسایی</span>
-                    </div>
-                    <span id="cardId" class="text-base text-gray-900 font-bold">-</span>
-                  </div>
-
-                  <div class="flex items-center justify-between bg-gray-50 rounded-lg p-3 border-r-4 border-indigo-500">
-                    <div class="flex items-center gap-2.5">
-                      <div class="w-9 h-9 bg-indigo-600 rounded-md flex items-center justify-center flex-shrink-0">
-                        <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                          <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
-                        </svg>
-                      </div>
-                      <span class="text-sm text-gray-600 font-semibold">نام پدر</span>
-                    </div>
-                    <span id="cardFatherName" class="text-base text-gray-900 font-bold">-</span>
-                  </div>
-
-                  <div class="flex items-center justify-between bg-gray-50 rounded-lg p-3 border-r-4 border-cyan-500">
-                    <div class="flex items-center gap-2.5">
-                      <div class="w-9 h-9 bg-cyan-600 rounded-md flex items-center justify-center flex-shrink-0">
-                        <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
-                        </svg>
-                      </div>
-                      <span class="text-sm text-gray-600 font-semibold">صنف</span>
-                    </div>
-                    <span id="cardClassName" class="text-base text-gray-900 font-bold">-</span>
-                  </div>
+                <div class="flex items-start" style="margin-bottom: 8px;">
+                  <span class="font-semibold text-gray-800" style="min-width: 140px;">شماره تماس</span>
+                  <span class="font-semibold text-gray-900">:</span>
+                  <span id="cardContact" class="font-bold text-gray-900 mr-2">-</span>
+                </div>
+                <div class="flex items-start" style="margin-bottom: 8px;">
+                  <span class="font-semibold text-gray-800" style="min-width: 140px;">تاریخ صدور</span>
+                  <span class="font-semibold text-gray-900">:</span>
+                  <span id="cardIssueDate" class="font-bold text-gray-900 mr-2">-</span>
+                </div>
+                <div class="flex items-start" style="margin-bottom: 8px;">
+                  <span class="font-semibold text-gray-800" style="min-width: 140px;">تاریخ انقضا</span>
+                  <span class="font-semibold text-gray-900">:</span>
+                  <span id="cardExpiryDate" class="font-bold text-gray-900 mr-2">-</span>
                 </div>
               </div>
 
-              </div>
+            </div>
+
+            <!-- Orange Footer - Solid Color like sample -->
+            <div class="text-center text-white font-medium" style="background-color: #E8572A; padding: 12px; font-size: 15px;">
+            چهارراهی پروژه تایمنی، جوار مسجد جامع الحاج سید منصور نادری
+            </div>
           </div>
         </div>
       </div>
@@ -286,7 +283,8 @@
         "father_name": "{{ student.father_name|default:'-'|escapejs }}",
         "class_name": "{{ student.class_name|default:'-'|escapejs }}",
         "image_url": "{% if student.image %}{{ student.image.url }}{% endif %}",
-        "id_number": "{{ student.id_number|default:'-'|escapejs }}"
+        "id_number": "{{ student.id_number|default:'-'|escapejs }}",
+        "mobile_number": "{{ student.mobile_number|default:'-'|escapejs }}"
       }{% if not forloop.last %},{% endif %}
     {% endfor %}
   ]
@@ -337,23 +335,77 @@
         return;
       }
 
-      // Update card content
+      // Calculate issue date (current date) and expiry date (1 year later)
+      const issueDate = new Date();
+      const expiryDate = new Date(issueDate);
+      expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+      
+      // Format dates as YYYY-MM-DD
+      const formatDate = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+
+      // Update card content (RTL Persian format - no colons needed)
       document.getElementById('cardName').textContent = student.name;
-      document.getElementById('cardId').textContent = student.id_number || student.id;
-      document.getElementById('cardFatherName').textContent = student.father_name;
       document.getElementById('cardClassName').textContent = student.class_name;
+      document.getElementById('cardFatherName').textContent = student.father_name;
+      document.getElementById('cardContact').textContent = student.mobile_number || '-';
+      document.getElementById('cardIssueDate').textContent = formatDate(issueDate);
+      document.getElementById('cardExpiryDate').textContent = formatDate(expiryDate);
 
       // Update photo
       const photoDiv = document.getElementById('cardPhoto');
       if (student.image_url) {
-        photoDiv.innerHTML = '<img src="' + student.image_url + '" alt="' + student.name + '" class="w-full h-full object-cover rounded-lg">';
+        photoDiv.innerHTML = '<img src="' + student.image_url + '" alt="' + student.name + '" class="w-full h-full object-cover rounded-full">';
       } else {
-        photoDiv.innerHTML = '<svg class="w-14 h-14 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/></svg>';
+        photoDiv.innerHTML = '<svg class="w-16 h-16 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/></svg>';
       }
+
+      // Generate barcode using student ID
+      generateBarcode(student.id_number || student.id);
 
       // Show modal
       document.getElementById('idCardModal').classList.remove('hidden');
       document.body.style.overflow = 'hidden';
+    }
+
+    function generateBarcode(value) {
+      // Simple barcode generation using SVG rectangles
+      const barcodeContainer = document.getElementById('barcodeImage');
+      if (!barcodeContainer) return;
+      
+      // Clear existing barcode
+      barcodeContainer.innerHTML = '';
+      
+      // Convert value to string and create a simple pattern
+      const barcodeString = String(value).padStart(10, '0');
+      const barWidth = 3;
+      const barHeight = 48;
+      let xPos = 0;
+      
+      // Create bars based on alternating pattern
+      for (let i = 0; i < barcodeString.length; i++) {
+        const digit = parseInt(barcodeString[i]);
+        const isBlack = digit % 2 === 0;
+        
+        if (isBlack) {
+          const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+          rect.setAttribute('x', xPos);
+          rect.setAttribute('y', '0');
+          rect.setAttribute('width', barWidth);
+          rect.setAttribute('height', barHeight);
+          rect.setAttribute('fill', 'black');
+          barcodeContainer.appendChild(rect);
+        }
+        
+        xPos += barWidth + 1;
+      }
+      
+      // Set viewBox
+      barcodeContainer.setAttribute('viewBox', `0 0 ${xPos} ${barHeight}`);
     }
 
     function closeIdCard() {

@@ -10,9 +10,24 @@
     font-style: normal;
   }
   
-  /* Apply B Nazanin to all card text */
+  /* Apply B Nazanin to all card text with proper RTL rendering */
   #idCardContent * {
     font-family: 'B Nazanin', Tahoma, Arial, sans-serif !important;
+    direction: rtl !important;
+    unicode-bidi: embed !important;
+    text-rendering: optimizeLegibility !important;
+    -webkit-font-smoothing: antialiased !important;
+    -moz-osx-font-smoothing: grayscale !important;
+  }
+  
+  /* Specific fix for text elements to prevent character separation */
+  #idCardContent h2,
+  #idCardContent h3,
+  #idCardContent span,
+  #idCardContent div {
+    white-space: normal !important;
+    word-spacing: normal !important;
+    letter-spacing: normal !important;
   }
 </style>
   <!-- Page Header -->
@@ -187,7 +202,6 @@
       </div>
 
       <!-- ID Card Content -->
-      <!-- ID Card Content -->
       <div class="p-6">
         <div id="idCardContent" class="bg-white shadow-2xl overflow-hidden" style="width: 440px; height: 620px; margin: 0 auto; direction: rtl;">
           <!-- Vertical Layout matching sample - RTL Persian -->
@@ -226,7 +240,7 @@
             <div class="flex-1 bg-white" style="padding: 0 32px 24px 32px;">
               <!-- Student Name -->
               <div class="text-center" style="margin-bottom: 24px;">
-                <h2 id="cardName" class="font-black" style="font-size: 30px; color: #E8572A; letter-spacing: 0.5px;">نام دانش‌آموز</h2>
+                <h2 id="cardName" class="font-black" style="font-size: 30px; color: #E8572A;">نام دانش‌آموز</h2>
               </div>
 
               <!-- Student Information - RTL Persian -->
@@ -492,15 +506,23 @@
       const element = document.getElementById('idCardContent');
       
       try {
+        // Wait for fonts to load before capturing
+        await document.fonts.ready;
+        
+        // Add a small delay to ensure everything is rendered
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         // Use html2canvas to capture the card exactly as displayed
         const canvas = await html2canvas(element, {
-          scale: 2,
+          scale: 3,  // Increased scale for better quality
           useCORS: true,
           allowTaint: true,
           backgroundColor: '#ffffff',
           logging: false,
           width: 440,
-          height: 620
+          height: 620,
+          letterRendering: true,  // Better text rendering
+          foreignObjectRendering: false  // Use standard rendering
         });
         
         // Check if canvas has content
@@ -519,7 +541,8 @@
         const pdf = new jsPDF({
           orientation: 'portrait',
           unit: 'px',
-          format: [440, 620]
+          format: [440, 620],
+          compress: true
         });
         
         pdf.addImage(imgData, 'JPEG', 0, 0, 440, 620);

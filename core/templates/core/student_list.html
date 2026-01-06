@@ -2,6 +2,19 @@
 {% load static %}
 
 {% block content %}
+<style>
+  @font-face {
+    font-family: 'B Nazanin';
+    src: url("{% static 'fonts/B_NAZANIN/B-NAZANIN.TTF' %}") format('truetype');
+    font-weight: normal;
+    font-style: normal;
+  }
+  
+  /* Apply B Nazanin to all card text */
+  #idCardContent * {
+    font-family: 'B Nazanin', Tahoma, Arial, sans-serif !important;
+  }
+</style>
   <!-- Page Header -->
   <div class="mb-6">
     <div class="flex items-center justify-between">
@@ -182,7 +195,7 @@
             <!-- Orange Header Section - Solid Color like sample -->
             <div class="relative" style="background-color: #E8572A; padding: 24px; padding-bottom: 100px;">
               <!-- Logo Circle (top right for RTL) -->
-              <div class="absolute top-4 right-4 w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-lg">
+              <div class="absolute top-8 right-10 w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-lg">
                 <img src="{% url 'core:logo' %}" alt="لوگو" class="w-12 h-12 object-contain rounded-full" onerror="this.style.display='none';">
               </div>
               
@@ -213,7 +226,7 @@
             <div class="flex-1 bg-white" style="padding: 0 32px 24px 32px;">
               <!-- Student Name -->
               <div class="text-center" style="margin-bottom: 24px;">
-                <h2 id="cardName" class="font-black" style="font-size: 30px; color: #E8572A; letter-spacing: 0.5px; font-family: Arial, sans-serif;">نام دانش‌آموز</h2>
+                <h2 id="cardName" class="font-black" style="font-size: 30px; color: #E8572A; letter-spacing: 0.5px;">نام دانش‌آموز</h2>
               </div>
 
               <!-- Student Information - RTL Persian -->

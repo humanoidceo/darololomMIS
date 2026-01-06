@@ -444,6 +444,9 @@
       const printContent = document.getElementById('idCardContent').cloneNode(true);
       const printWindow = window.open('', '_blank');
       
+      // Get the absolute URL for the font
+      const fontUrl = "{{ request.scheme }}://{{ request.get_host }}{% static 'fonts/B_NAZANIN/B-NAZANIN.TTF' %}";
+      
       printWindow.document.write(`
         <!DOCTYPE html>
         <html dir="rtl" lang="fa">
@@ -454,9 +457,10 @@
           <style>
             @font-face {
               font-family: 'B Nazanin';
-              src: url("{% static 'fonts/B_NAZANIN/B-NAZANIN.TTF' %}") format('truetype');
+              src: url("${fontUrl}") format('truetype');
               font-weight: normal;
               font-style: normal;
+              font-display: block;
             }
             
             * {
@@ -515,6 +519,14 @@
               letter-spacing: normal !important;
             }
           <\/style>
+          <script>
+            // Wait for fonts to load before allowing print
+            window.onload = function() {
+              document.fonts.ready.then(function() {
+                console.log('Fonts loaded in print window');
+              });
+            };
+          <\/script>
         </head>
         <body>
           <div id="printCard">${printContent.outerHTML}</div>
@@ -524,10 +536,15 @@
       
       printWindow.document.close();
       
-      // Wait longer for font to load before printing
-      setTimeout(() => {
-        printWindow.print();
-      }, 1500);
+      // Wait for font to load before printing
+      // Use document.fonts.ready in the print window
+      printWindow.addEventListener('load', function() {
+        printWindow.document.fonts.ready.then(function() {
+          setTimeout(() => {
+            printWindow.print();
+          }, 500);
+        });
+      });
     }
 
     async function printToPDF() {

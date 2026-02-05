@@ -240,9 +240,24 @@ class TeacherContractForm(forms.ModelForm):
         }
         widgets = {
             'contract_number': forms.TextInput(attrs={'class': 'border border-gray-300 rounded px-2 py-1 w-full'}),
-            'contract_date': forms.DateInput(attrs={'type': 'date', 'class': 'border border-gray-300 rounded px-2 py-1 w-full'}),
-            'start_date': forms.DateInput(attrs={'type': 'date', 'class': 'border border-gray-300 rounded px-2 py-1 w-full'}),
-            'end_date': forms.DateInput(attrs={'type': 'date', 'class': 'border border-gray-300 rounded px-2 py-1 w-full'}),
+            'contract_date': forms.TextInput(attrs={
+                'class': 'border border-gray-300 rounded px-2 py-1 w-full',
+                'placeholder': 'مثلاً ۱۴۰۲/۰۵/۱۰',
+                'data-jdp': '',
+                'autocomplete': 'off',
+            }),
+            'start_date': forms.TextInput(attrs={
+                'class': 'border border-gray-300 rounded px-2 py-1 w-full',
+                'placeholder': 'مثلاً ۱۴۰۲/۰۵/۱۰',
+                'data-jdp': '',
+                'autocomplete': 'off',
+            }),
+            'end_date': forms.TextInput(attrs={
+                'class': 'border border-gray-300 rounded px-2 py-1 w-full',
+                'placeholder': 'مثلاً ۱۴۰۲/۰۵/۱۰',
+                'data-jdp': '',
+                'autocomplete': 'off',
+            }),
             'monthly_salary': forms.TextInput(attrs={'class': 'border border-gray-300 rounded px-2 py-1 w-full', 'placeholder': 'مثلاً ۱۵۰۰۰ افغانی'}),
             'position': forms.TextInput(attrs={'class': 'border border-gray-300 rounded px-2 py-1 w-full'}),
             'work_hours': forms.TextInput(attrs={'class': 'border border-gray-300 rounded px-2 py-1 w-full', 'placeholder': 'مثلاً ۸ صبح تا ۲ بعد از ظهر'}),

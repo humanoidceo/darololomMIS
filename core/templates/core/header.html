@@ -22,15 +22,27 @@
           </div>
         </div>
 
-        <!-- Mobile menu toggle -->
-        <button id="mobile-menu-toggle" class="sm:hidden p-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-700 transition-colors">
-          <svg id="menu-icon-open" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-          </svg>
-          <svg id="menu-icon-close" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-          </svg>
-        </button>
+        <div class="flex items-center gap-2">
+          <!-- Theme toggle -->
+          <button id="theme-toggle" class="p-2.5 rounded-full border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 shadow-sm transition-colors" type="button" aria-label="تغییر تم">
+            <svg id="theme-icon-sun" class="w-5 h-5 hidden text-amber-500" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 7a5 5 0 100 10 5 5 0 000-10zm0-5a1 1 0 011 1v2a1 1 0 11-2 0V3a1 1 0 011-1zm0 18a1 1 0 011 1v2a1 1 0 11-2 0v-2a1 1 0 011-1zM3 11a1 1 0 011-1h2a1 1 0 110 2H4a1 1 0 01-1-1zm14 0a1 1 0 011-1h2a1 1 0 110 2h-2a1 1 0 01-1-1zM5.636 5.636a1 1 0 011.414 0l1.414 1.414a1 1 0 11-1.414 1.414L5.636 7.05a1 1 0 010-1.414zm10.9 10.9a1 1 0 011.414 0l1.414 1.414a1 1 0 11-1.414 1.414l-1.414-1.414a1 1 0 010-1.414zM18.95 5.636a1 1 0 010 1.414L17.536 8.464a1 1 0 11-1.414-1.414l1.414-1.414a1 1 0 011.414 0zM8.464 17.536a1 1 0 010 1.414l-1.414 1.414a1 1 0 11-1.414-1.414l1.414-1.414a1 1 0 011.414 0z"/>
+            </svg>
+            <svg id="theme-icon-moon" class="w-5 h-5 hidden text-slate-700" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M21 14.5A8.5 8.5 0 019.5 3a.75.75 0 00-.86.98A7 7 0 1019.02 15.36a.75.75 0 00.98-.86z"/>
+            </svg>
+          </button>
+
+          <!-- Mobile menu toggle -->
+          <button id="mobile-menu-toggle" class="sm:hidden p-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-700 transition-colors">
+            <svg id="menu-icon-open" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+            <svg id="menu-icon-close" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -123,6 +135,27 @@
 
   <script>
     (function(){
+      const themeToggle = document.getElementById('theme-toggle');
+      const sunIcon = document.getElementById('theme-icon-sun');
+      const moonIcon = document.getElementById('theme-icon-moon');
+      const root = document.documentElement;
+
+      function setTheme(isDark){
+        root.classList.toggle('dark', isDark);
+        try { localStorage.setItem('theme', isDark ? 'dark' : 'light'); } catch (e) {}
+        if (sunIcon && moonIcon){
+          sunIcon.classList.toggle('hidden', !isDark);
+          moonIcon.classList.toggle('hidden', isDark);
+        }
+      }
+
+      if (themeToggle){
+        themeToggle.addEventListener('click', function(){
+          const isDark = root.classList.contains('dark');
+          setTheme(!isDark);
+        });
+      }
+
       const btn = document.getElementById('mobile-menu-toggle');
       const menu = document.getElementById('mobile-menu');
       const iconOpen = document.getElementById('menu-icon-open');
@@ -151,6 +184,9 @@
           }
         }
       });
+
+      // initialize theme icons
+      setTheme(root.classList.contains('dark'));
     })();
   </script>
 </header>

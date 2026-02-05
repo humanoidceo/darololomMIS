@@ -35,6 +35,12 @@ class Student(models.Model):
 
 	# Allow assigning one or more semesters to a student (useful for filtering subjects)
 	semesters = models.ManyToManyField('Semester', verbose_name='سمسترها', blank=True)
+	# سطح آموزشی (ابتداییه/متوسطه/عالی)
+	level = models.ForeignKey('StudyLevel', verbose_name='سطح آموزشی', null=True, blank=True, on_delete=models.SET_NULL)
+	# فارغ صنف دوازدهم یا خیر (برای دوره عالی الزامی است)
+	is_grade12_graduate = models.BooleanField('فارغ صنف دوازدهم', default=False)
+	# دوره‌ها (برای ابتداییه و متوسطه)
+	periods = models.ManyToManyField('CoursePeriod', verbose_name='دوره‌ها', blank=True)
 
 	class Meta:
 		verbose_name = 'دانش‌آموز'
@@ -119,6 +125,10 @@ class Teacher(models.Model):
 
 	# Replace single semester with M2M to Semester
 	semesters = models.ManyToManyField('Semester', verbose_name='سمسترها', blank=True)
+	# سطوح تدریس (ابتداییه/متوسطه/عالی)
+	levels = models.ManyToManyField('StudyLevel', verbose_name='سطوح تدریس', blank=True)
+	# دوره‌ها (برای ابتداییه و متوسطه)
+	periods = models.ManyToManyField('CoursePeriod', verbose_name='دوره‌ها', blank=True)
 
 	created_at = models.DateTimeField('ایجاد شده در', auto_now_add=True)
 
@@ -153,6 +163,31 @@ class Semester(models.Model):
 			'9': '۹',
 		}
 		return ''.join(persian_digits.get(ch, ch) for ch in str(self.number))
+
+
+class StudyLevel(models.Model):
+	"""Model representing a study level (ابتداییه/متوسطه/عالی)."""
+	code = models.CharField('کد سطح', max_length=20, unique=True)
+	name = models.CharField('نام سطح', max_length=50, unique=True)
+
+	class Meta:
+		verbose_name = 'سطح آموزشی'
+		verbose_name_plural = 'سطوح آموزشی'
+
+	def __str__(self) -> str:
+		return self.name
+
+
+class CoursePeriod(models.Model):
+	"""Model representing a course period number (1..6) for ابتداییه/متوسطه."""
+	number = models.PositiveSmallIntegerField('شماره دوره', unique=True)
+
+	class Meta:
+		verbose_name = 'دوره'
+		verbose_name_plural = 'دوره‌ها'
+
+	def __str__(self) -> str:
+		return _to_persian(self.number)
 
 
 class StudentScore(models.Model):

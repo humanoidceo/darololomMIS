@@ -6,14 +6,47 @@ from django.contrib import messages
 from django.http import FileResponse, Http404, JsonResponse
 from django.conf import settings
 import os
-from .models import Student, SchoolClass, Subject, Teacher
+from .models import Student, SchoolClass, Subject, Teacher, StudyLevel, CoursePeriod, Semester
 from .forms import StudentForm, SchoolClassForm, SubjectForm, TeacherForm
 from .models import StudentScore
 import json
 from django.utils.safestring import mark_safe
 
 
+def _persian_to_ascii(s: str) -> str:
+	"""Convert Persian digits to ASCII digits."""
+	mapping = {
+		'۰': '0', '۱': '1', '۲': '2', '۳': '3', '۴': '4',
+		'۵': '5', '۶': '6', '۷': '7', '۸': '8', '۹': '9',
+	}
+	return ''.join(mapping.get(ch, ch) for ch in s)
+
+
+def _ensure_reference_data():
+	"""Ensure study levels, semesters, and periods exist."""
+	level_defs = [
+		('aali', 'عالی'),
+		('moteseta', 'متوسطه'),
+		('ebtedai', 'ابتداییه'),
+	]
+	level_map = {}
+	for code, name in level_defs:
+		obj, _ = StudyLevel.objects.get_or_create(code=code, defaults={'name': name})
+		if obj.name != name:
+			obj.name = name
+			obj.save(update_fields=['name'])
+		level_map[code] = obj
+
+	for n in range(1, 5):
+		Semester.objects.get_or_create(number=n)
+	for n in range(1, 7):
+		CoursePeriod.objects.get_or_create(number=n)
+
+	return level_map
+
+
 def student_create(request):
+	level_map = _ensure_reference_data()
 	if request.method == 'POST':
 		form = StudentForm(request.POST, request.FILES)
 		if form.is_valid():
@@ -22,7 +55,15 @@ def student_create(request):
 			return redirect(reverse('core:student_list'))
 	else:
 		form = StudentForm()
-	return render(request, 'core/student_form_clean.html', {'form': form})
+	level_ids = {k: v.id for k, v in level_map.items()}
+	period_names = [{'value': str(p.id), 'label': str(p)} for p in CoursePeriod.objects.order_by('number')]
+	return render(request, 'core/student_form_clean.html', {
+		'form': form,
+		'level_ids': level_ids,
+		'period_names': period_names,
+		'student_periods_ebtedai': [],
+		'student_periods_moteseta': [],
+	})
 
 
 def student_list(request):
@@ -67,6 +108,7 @@ def teacher_list(request):
 
 def teacher_create(request):
 	"""Create a new Teacher. Classes and subjects are provided as searchable tags from frontend."""
+	_ensure_reference_data()
 	if request.method == 'POST':
 		form = TeacherForm(request.POST, request.FILES)
 		if form.is_valid():
@@ -75,6 +117,8 @@ def teacher_create(request):
 			class_names = request.POST.getlist('classes')
 			subject_names = request.POST.getlist('subjects')
 			semester_values = request.POST.getlist('semesters')
+			level_values = request.POST.getlist('levels')
+			period_values = request.POST.getlist('periods_ebtedai') + request.POST.getlist('periods_moteseta')
 			if class_names:
 				classes_qs = SchoolClass.objects.filter(name__in=class_names)
 				teacher.classes.set(classes_qs)
@@ -83,18 +127,9 @@ def teacher_create(request):
 				teacher.subjects.set(sub_qs)
 			# handle semesters: create/get Semester objects for given numbers
 			if semester_values:
-				from .models import Semester
 				sem_qs = []
-				def persian_to_ascii(s: str) -> str:
-					# convert Persian digits to ascii digits if present
-					mapping = {
-						'۰': '0', '۱': '1', '۲': '2', '۳': '3', '۴': '4',
-						'۵': '5', '۶': '6', '۷': '7', '۸': '8', '۹': '9',
-					}
-					return ''.join(mapping.get(ch, ch) for ch in s)
-
 				for s in semester_values:
-					s_norm = persian_to_ascii(s.strip())
+					s_norm = _persian_to_ascii(s.strip())
 					try:
 						num = int(s_norm)
 					except ValueError:
@@ -102,6 +137,22 @@ def teacher_create(request):
 					sem, _ = Semester.objects.get_or_create(number=num)
 					sem_qs.append(sem)
 				teacher.semesters.set(sem_qs)
+			# handle levels
+			if level_values is not None:
+				level_qs = StudyLevel.objects.filter(code__in=level_values)
+				teacher.levels.set(level_qs)
+			# handle periods
+			if period_values:
+				period_qs = []
+				for s in sorted(set(period_values)):
+					s_norm = _persian_to_ascii(s.strip())
+					try:
+						num = int(s_norm)
+					except ValueError:
+						continue
+					per, _ = CoursePeriod.objects.get_or_create(number=num)
+					period_qs.append(per)
+				teacher.periods.set(period_qs)
 			messages.success(request, 'استاد با موفقیت ثبت شد.')
 			return redirect(reverse('core:teacher_list'))
 	else:
@@ -109,13 +160,21 @@ def teacher_create(request):
 
 	class_names = list(SchoolClass.objects.values_list('name', flat=True))
 	subject_names = list(Subject.objects.values_list('name', flat=True))
-	# semester options as objects with value (ascii) and label (persian)
-	pers_map = {'0': '۰', '1': '۱', '2': '۲', '3': '۳', '4': '۴'}
-	semester_names = [{'value': str(n), 'label': ''.join(pers_map.get(ch, ch) for ch in str(n))} for n in range(1, 5)]
-	return render(request, 'core/teacher_form.html', {'form': form, 'class_names': class_names, 'subject_names': subject_names, 'semester_names': semester_names})
+	semester_names = [{'value': str(s.number), 'label': str(s)} for s in Semester.objects.order_by('number')]
+	level_names = [{'value': l.code, 'label': l.name} for l in StudyLevel.objects.order_by('id')]
+	period_names = [{'value': str(p.number), 'label': str(p)} for p in CoursePeriod.objects.order_by('number')]
+	return render(request, 'core/teacher_form.html', {
+		'form': form,
+		'class_names': class_names,
+		'subject_names': subject_names,
+		'semester_names': semester_names,
+		'level_names': level_names,
+		'period_names': period_names,
+	})
 
 
 def teacher_edit(request, pk):
+	_ensure_reference_data()
 	teacher = get_object_or_404(Teacher, pk=pk)
 	if request.method == 'POST':
 		form = TeacherForm(request.POST, request.FILES, instance=teacher)
@@ -124,6 +183,8 @@ def teacher_edit(request, pk):
 			class_names = request.POST.getlist('classes')
 			subject_names = request.POST.getlist('subjects')
 			semester_values = request.POST.getlist('semesters')
+			level_values = request.POST.getlist('levels')
+			period_values = request.POST.getlist('periods_ebtedai') + request.POST.getlist('periods_moteseta')
 			if class_names is not None:
 				classes_qs = SchoolClass.objects.filter(name__in=class_names)
 				teacher.classes.set(classes_qs)
@@ -131,14 +192,9 @@ def teacher_edit(request, pk):
 				sub_qs = Subject.objects.filter(name__in=subject_names)
 				teacher.subjects.set(sub_qs)
 			if semester_values is not None:
-				from .models import Semester
 				sem_qs = []
-				def persian_to_ascii(s: str) -> str:
-					mapping = {'۰': '0', '۱': '1', '۲': '2', '۳': '3', '۴': '4', '۵': '5', '۶': '6', '۷': '7', '۸': '8', '۹': '9'}
-					return ''.join(mapping.get(ch, ch) for ch in s)
-
 				for s in semester_values:
-					s_norm = persian_to_ascii(s.strip())
+					s_norm = _persian_to_ascii(s.strip())
 					try:
 						num = int(s_norm)
 					except ValueError:
@@ -146,6 +202,20 @@ def teacher_edit(request, pk):
 					sem, _ = Semester.objects.get_or_create(number=num)
 					sem_qs.append(sem)
 				teacher.semesters.set(sem_qs)
+			if level_values is not None:
+				level_qs = StudyLevel.objects.filter(code__in=level_values)
+				teacher.levels.set(level_qs)
+			if period_values is not None:
+				period_qs = []
+				for s in sorted(set(period_values)):
+					s_norm = _persian_to_ascii(s.strip())
+					try:
+						num = int(s_norm)
+					except ValueError:
+						continue
+					per, _ = CoursePeriod.objects.get_or_create(number=num)
+					period_qs.append(per)
+				teacher.periods.set(period_qs)
 			messages.success(request, 'اطلاعات استاد با موفقیت بروزرسانی شد.')
 			return redirect(reverse('core:teacher_list'))
 	else:
@@ -157,8 +227,17 @@ def teacher_edit(request, pk):
 	teacher_classes = list(teacher.classes.values_list('name', flat=True))
 	teacher_subjects = list(teacher.subjects.values_list('name', flat=True))
 	teacher_semesters = list(teacher.semesters.values_list('number', flat=True))
-	pers_map = {'0': '۰', '1': '۱', '2': '۲', '3': '۳', '4': '۴'}
-	semester_names = [{'value': str(n), 'label': ''.join(pers_map.get(ch, ch) for ch in str(n))} for n in range(1, 5)]
+	teacher_levels = list(teacher.levels.values_list('code', flat=True))
+	teacher_periods = list(teacher.periods.values_list('number', flat=True))
+	teacher_periods_ebtedai = []
+	teacher_periods_moteseta = []
+	if 'ebtedai' in teacher_levels:
+		teacher_periods_ebtedai = [str(p) for p in teacher_periods]
+	if 'moteseta' in teacher_levels:
+		teacher_periods_moteseta = [str(p) for p in teacher_periods]
+	semester_names = [{'value': str(s.number), 'label': str(s)} for s in Semester.objects.order_by('number')]
+	level_names = [{'value': l.code, 'label': l.name} for l in StudyLevel.objects.order_by('id')]
+	period_names = [{'value': str(p.number), 'label': str(p)} for p in CoursePeriod.objects.order_by('number')]
 	return render(request, 'core/teacher_form.html', {
 		'form': form,
 		'class_names': class_names,
@@ -167,6 +246,11 @@ def teacher_edit(request, pk):
 		'teacher_subjects': teacher_subjects,
 		'teacher_semesters': [str(s) for s in teacher_semesters],
 		'semester_names': semester_names,
+		'level_names': level_names,
+		'period_names': period_names,
+		'teacher_levels': teacher_levels,
+		'teacher_periods_ebtedai': teacher_periods_ebtedai,
+		'teacher_periods_moteseta': teacher_periods_moteseta,
 	})
 
 
@@ -351,6 +435,7 @@ def class_delete(request, pk):
 
 def student_edit(request, pk):
 	"""Edit an existing student."""
+	level_map = _ensure_reference_data()
 	student = get_object_or_404(Student, pk=pk)
 	if request.method == 'POST':
 		form = StudentForm(request.POST, request.FILES, instance=student)
@@ -360,7 +445,22 @@ def student_edit(request, pk):
 			return redirect(reverse('core:student_list'))
 	else:
 		form = StudentForm(instance=student)
-	return render(request, 'core/student_form_clean.html', {'form': form})
+	level_ids = {k: v.id for k, v in level_map.items()}
+	period_names = [{'value': str(p.id), 'label': str(p)} for p in CoursePeriod.objects.order_by('number')]
+	student_periods_ebtedai = []
+	student_periods_moteseta = []
+	if student.level:
+		if student.level.code == 'ebtedai':
+			student_periods_ebtedai = [str(p.id) for p in student.periods.all()]
+		elif student.level.code == 'moteseta':
+			student_periods_moteseta = [str(p.id) for p in student.periods.all()]
+	return render(request, 'core/student_form_clean.html', {
+		'form': form,
+		'level_ids': level_ids,
+		'period_names': period_names,
+		'student_periods_ebtedai': student_periods_ebtedai,
+		'student_periods_moteseta': student_periods_moteseta,
+	})
 
 
 def student_delete(request, pk):

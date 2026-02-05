@@ -82,6 +82,15 @@
         </div>
 
         <div>
+          <label class="block text-sm font-medium text-gray-700">سطوح تدریس (انتخاب یک یا چند مورد)</label>
+          <div class="mt-1">
+            <input id="level_search_input" type="text" placeholder="جستجو سطح (عالی، متوسطه، ابتداییه)" class="block w-full rounded-md border-gray-300 border p-2" autocomplete="off">
+            <div id="selected_levels" class="mt-2 flex flex-wrap gap-2"></div>
+            <p class="text-xs text-gray-400 mt-1">سمسترها مخصوص دوره عالی است و دوره‌ها مخصوص ابتداییه/متوسطه.</p>
+          </div>
+        </div>
+
+        <div>
           <label class="block text-sm font-medium text-gray-700">صنوف (جستجو و انتخاب)</label>
           <div class="mt-1">
             <input id="class_search_input" type="text" placeholder="جستجو صنف" class="block w-full rounded-md border-gray-300 border p-2" autocomplete="off">
@@ -98,10 +107,26 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700">سمسترها (انتخاب یک یا چند مورد)</label>
+          <label class="block text-sm font-medium text-gray-700">سمسترها (برای دوره عالی)</label>
           <div class="mt-1">
             <input id="semester_search_input" type="text" placeholder="جستجو سمستر (۱ ۲ ۳ ۴)" class="block w-full rounded-md border-gray-300 border p-2" autocomplete="off">
             <div id="selected_semesters" class="mt-2 flex flex-wrap gap-2"></div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700">دوره‌های ابتداییه</label>
+          <div class="mt-1">
+            <input id="period_ebtedai_search_input" type="text" placeholder="جستجو دوره ابتداییه (۱ تا ۶)" class="block w-full rounded-md border-gray-300 border p-2" autocomplete="off">
+            <div id="selected_periods_ebtedai" class="mt-2 flex flex-wrap gap-2"></div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700">دوره‌های متوسطه</label>
+          <div class="mt-1">
+            <input id="period_moteseta_search_input" type="text" placeholder="جستجو دوره متوسطه (۱ تا ۶)" class="block w-full rounded-md border-gray-300 border p-2" autocomplete="off">
+            <div id="selected_periods_moteseta" class="mt-2 flex flex-wrap gap-2"></div>
           </div>
         </div>
 
@@ -126,10 +151,22 @@
     <script id="subjectNames" type="application/json">[]</script>
   {% endif %}
 
+  {% if level_names %}
+    {{ level_names|json_script:"levelNames" }}
+  {% else %}
+    <script id="levelNames" type="application/json">[]</script>
+  {% endif %}
+
   {% if semester_names %}
     {{ semester_names|json_script:"semesterNames" }}
   {% else %}
     <script id="semesterNames" type="application/json">[]</script>
+  {% endif %}
+
+  {% if period_names %}
+    {{ period_names|json_script:"periodNames" }}
+  {% else %}
+    <script id="periodNames" type="application/json">[]</script>
   {% endif %}
 
   {% if teacher_classes %}
@@ -144,10 +181,28 @@
     <script id="teacherSubjects" type="application/json">[]</script>
   {% endif %}
 
+  {% if teacher_levels %}
+    {{ teacher_levels|json_script:"teacherLevels" }}
+  {% else %}
+    <script id="teacherLevels" type="application/json">[]</script>
+  {% endif %}
+
   {% if teacher_semesters %}
     {{ teacher_semesters|json_script:"teacherSemesters" }}
   {% else %}
     <script id="teacherSemesters" type="application/json">[]</script>
+  {% endif %}
+
+  {% if teacher_periods_ebtedai %}
+    {{ teacher_periods_ebtedai|json_script:"teacherPeriodsEbtedai" }}
+  {% else %}
+    <script id="teacherPeriodsEbtedai" type="application/json">[]</script>
+  {% endif %}
+
+  {% if teacher_periods_moteseta %}
+    {{ teacher_periods_moteseta|json_script:"teacherPeriodsMoteseta" }}
+  {% else %}
+    <script id="teacherPeriodsMoteseta" type="application/json">[]</script>
   {% endif %}
 
 {% block extra_js %}
@@ -167,7 +222,7 @@
       });
     }
 
-    // simple tag selector used for classes, subjects and semesters
+    // simple tag selector used for classes, subjects, levels, semesters and periods
     function setupTagInput(searchInputId, selectedContainerId, listScriptId, hiddenInputName, preselected){
       const raw = document.getElementById(listScriptId) && document.getElementById(listScriptId).textContent;
       let items = [];
@@ -224,22 +279,35 @@
 
     const classNamesRaw = document.getElementById('classNames') && document.getElementById('classNames').textContent;
     const subjectNamesRaw = document.getElementById('subjectNames') && document.getElementById('subjectNames').textContent;
+    const levelNamesRaw = document.getElementById('levelNames') && document.getElementById('levelNames').textContent;
     const semesterNamesRaw = document.getElementById('semesterNames') && document.getElementById('semesterNames').textContent;
+    const periodNamesRaw = document.getElementById('periodNames') && document.getElementById('periodNames').textContent;
     const teacherClassesRaw = document.getElementById('teacherClasses') && document.getElementById('teacherClasses').textContent;
     const teacherSubjectsRaw = document.getElementById('teacherSubjects') && document.getElementById('teacherSubjects').textContent;
+    const teacherLevelsRaw = document.getElementById('teacherLevels') && document.getElementById('teacherLevels').textContent;
     const teacherSemestersRaw = document.getElementById('teacherSemesters') && document.getElementById('teacherSemesters').textContent;
+    const teacherPeriodsEbtedaiRaw = document.getElementById('teacherPeriodsEbtedai') && document.getElementById('teacherPeriodsEbtedai').textContent;
+    const teacherPeriodsMotesetaRaw = document.getElementById('teacherPeriodsMoteseta') && document.getElementById('teacherPeriodsMoteseta').textContent;
 
-    let classNames=[], subjectNames=[], semesterNames=[], teacherClasses=[], teacherSubjects=[], teacherSemesters=[];
+    let classNames=[], subjectNames=[], levelNames=[], semesterNames=[], periodNames=[], teacherClasses=[], teacherSubjects=[], teacherLevels=[], teacherSemesters=[], teacherPeriodsEbtedai=[], teacherPeriodsMoteseta=[];
     try{ classNames = classNamesRaw? JSON.parse(classNamesRaw): []; }catch(e){ classNames = []; }
     try{ subjectNames = subjectNamesRaw? JSON.parse(subjectNamesRaw): []; }catch(e){ subjectNames = []; }
+    try{ levelNames = levelNamesRaw? JSON.parse(levelNamesRaw): []; }catch(e){ levelNames = []; }
     try{ semesterNames = semesterNamesRaw? JSON.parse(semesterNamesRaw): []; }catch(e){ semesterNames = []; }
+    try{ periodNames = periodNamesRaw? JSON.parse(periodNamesRaw): []; }catch(e){ periodNames = []; }
     try{ teacherClasses = teacherClassesRaw? JSON.parse(teacherClassesRaw): []; }catch(e){ teacherClasses = []; }
     try{ teacherSubjects = teacherSubjectsRaw? JSON.parse(teacherSubjectsRaw): []; }catch(e){ teacherSubjects = []; }
+    try{ teacherLevels = teacherLevelsRaw? JSON.parse(teacherLevelsRaw): []; }catch(e){ teacherLevels = []; }
     try{ teacherSemesters = teacherSemestersRaw? JSON.parse(teacherSemestersRaw): []; }catch(e){ teacherSemesters = []; }
+    try{ teacherPeriodsEbtedai = teacherPeriodsEbtedaiRaw? JSON.parse(teacherPeriodsEbtedaiRaw): []; }catch(e){ teacherPeriodsEbtedai = []; }
+    try{ teacherPeriodsMoteseta = teacherPeriodsMotesetaRaw? JSON.parse(teacherPeriodsMotesetaRaw): []; }catch(e){ teacherPeriodsMoteseta = []; }
 
     setupTagInput('class_search_input','selected_classes','classNames','classes', teacherClasses);
     setupTagInput('subject_search_input','selected_subjects','subjectNames','subjects', teacherSubjects);
+    setupTagInput('level_search_input','selected_levels','levelNames','levels', teacherLevels);
     setupTagInput('semester_search_input','selected_semesters','semesterNames','semesters', teacherSemesters);
+    setupTagInput('period_ebtedai_search_input','selected_periods_ebtedai','periodNames','periods_ebtedai', teacherPeriodsEbtedai);
+    setupTagInput('period_moteseta_search_input','selected_periods_moteseta','periodNames','periods_moteseta', teacherPeriodsMoteseta);
 
   })();
 </script>

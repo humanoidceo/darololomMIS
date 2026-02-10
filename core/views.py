@@ -1,16 +1,18 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.contrib import messages
 from django.http import FileResponse, Http404, JsonResponse
 from django.conf import settings
 import os
 from .models import Student, SchoolClass, Subject, Teacher, StudyLevel, CoursePeriod, Semester, TeacherContract
+from .models import StudentBehavior, TeacherBehavior
 from .forms import StudentForm, SchoolClassForm, SubjectForm, TeacherForm, TeacherContractForm
 from .models import StudentScore
 import json
 from django.utils.safestring import mark_safe
+from django.utils import timezone
 
 
 def _persian_to_ascii(s: str) -> str:
@@ -81,6 +83,9 @@ def student_list(request):
 		students = students.filter(
 			Q(name__icontains=q) | Q(father_name__icontains=q) | Q(mobile_number__icontains=q)
 		)
+	students = students.annotate(
+		merit_count=Count('behavior_entries', filter=Q(behavior_entries__entry_type='merit'), distinct=True),
+	)
 
 	paginator = Paginator(students, 10)
 	page_number = request.GET.get('page')
@@ -102,6 +107,9 @@ def teacher_list(request):
 		teachers = teachers.filter(
 			Q(name__icontains=q) | Q(father_name__icontains=q) | Q(id_number__icontains=q)
 		)
+	teachers = teachers.annotate(
+		merit_count=Count('behavior_entries', filter=Q(behavior_entries__entry_type='merit'), distinct=True),
+	)
 
 	paginator = Paginator(teachers, 20)
 	page_number = request.GET.get('page')
@@ -112,6 +120,68 @@ def teacher_list(request):
 		'page_obj': page_obj,
 	}
 	return render(request, 'core/teacher_list.html', context)
+
+
+def student_behavior_add(request):
+	"""ثبت تخلف یا امتیاز برای دانش‌آموز."""
+	if request.method != 'POST':
+		return redirect(reverse('core:student_list'))
+	student_id = request.POST.get('student_id')
+	entry_type = request.POST.get('entry_type')
+	note = (request.POST.get('note') or '').strip()
+	next_url = request.POST.get('next') or reverse('core:student_list')
+	if entry_type not in ('violation', 'merit'):
+		messages.error(request, 'نوع ثبت نامعتبر است.')
+		return redirect(next_url)
+	student = get_object_or_404(Student, pk=student_id)
+	StudentBehavior.objects.create(student=student, entry_type=entry_type, note=note)
+	if entry_type == 'violation':
+		messages.success(request, 'تخلف دانش‌آموز ثبت شد.')
+	else:
+		messages.success(request, 'امتیاز دانش‌آموز ثبت شد.')
+	return redirect(next_url)
+
+
+def teacher_behavior_add(request):
+	"""ثبت تخلف یا امتیاز برای استاد."""
+	if request.method != 'POST':
+		return redirect(reverse('core:teacher_list'))
+	teacher_id = request.POST.get('teacher_id')
+	entry_type = request.POST.get('entry_type')
+	note = (request.POST.get('note') or '').strip()
+	next_url = request.POST.get('next') or reverse('core:teacher_list')
+	if entry_type not in ('violation', 'merit'):
+		messages.error(request, 'نوع ثبت نامعتبر است.')
+		return redirect(next_url)
+	teacher = get_object_or_404(Teacher, pk=teacher_id)
+	TeacherBehavior.objects.create(teacher=teacher, entry_type=entry_type, note=note)
+	if entry_type == 'violation':
+		messages.success(request, 'تخلف استاد ثبت شد.')
+	else:
+		messages.success(request, 'امتیاز استاد ثبت شد.')
+	return redirect(next_url)
+
+
+def student_appreciation_print(request, pk):
+	student = get_object_or_404(Student, pk=pk)
+	merit_count = StudentBehavior.objects.filter(student=student, entry_type='merit').count()
+	if merit_count < 3:
+		raise Http404()
+	return render(request, 'core/student_appreciation_print.html', {
+		'student': student,
+		'today': timezone.now().date(),
+	})
+
+
+def teacher_appreciation_print(request, pk):
+	teacher = get_object_or_404(Teacher, pk=pk)
+	merit_count = TeacherBehavior.objects.filter(teacher=teacher, entry_type='merit').count()
+	if merit_count < 3:
+		raise Http404()
+	return render(request, 'core/teacher_appreciation_print.html', {
+		'teacher': teacher,
+		'today': timezone.now().date(),
+	})
 
 
 def teacher_create(request):

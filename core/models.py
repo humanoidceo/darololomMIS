@@ -235,6 +235,44 @@ class StudentScore(models.Model):
 	def __str__(self) -> str:
 		return f"{self.student} — {self.subject}: {self.score if self.score is not None else '—'}"
 
+
+class StudentBehavior(models.Model):
+	"""Track student violations and merits."""
+	ENTRY_CHOICES = [
+		('violation', 'تخلف'),
+		('merit', 'امتیاز'),
+	]
+	student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='behavior_entries')
+	entry_type = models.CharField('نوع ثبت', max_length=10, choices=ENTRY_CHOICES)
+	note = models.CharField('توضیحات', max_length=255, blank=True)
+	created_at = models.DateTimeField('ایجاد شده در', auto_now_add=True)
+
+	class Meta:
+		verbose_name = 'تخلف/امتیاز دانش‌آموز'
+		verbose_name_plural = 'تخلفات/امتیازات دانش‌آموزان'
+
+	def __str__(self) -> str:
+		return f"{self.student} — {self.get_entry_type_display()}"
+
+
+class TeacherBehavior(models.Model):
+	"""Track teacher violations and merits."""
+	ENTRY_CHOICES = [
+		('violation', 'تخلف'),
+		('merit', 'امتیاز'),
+	]
+	teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='behavior_entries')
+	entry_type = models.CharField('نوع ثبت', max_length=10, choices=ENTRY_CHOICES)
+	note = models.CharField('توضیحات', max_length=255, blank=True)
+	created_at = models.DateTimeField('ایجاد شده در', auto_now_add=True)
+
+	class Meta:
+		verbose_name = 'تخلف/امتیاز استاد'
+		verbose_name_plural = 'تخلفات/امتیازات اساتید'
+
+	def __str__(self) -> str:
+		return f"{self.teacher} — {self.get_entry_type_display()}"
+
 def _to_persian(num: int) -> str:
 	"""Helper to convert an integer 1..9 to Persian numeral string."""
 	map_ = {'0': '۰', '1': '۱', '2': '۲', '3': '۳', '4': '۴', '5': '۵', '6': '۶', '7': '۷', '8': '۸', '9': '۹'}

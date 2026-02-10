@@ -98,6 +98,22 @@
                 ویرایش
               </a>
 
+              <button type="button" data-teacher-id="{{ teacher.pk }}" data-teacher-name="{{ teacher.name|escapejs }}" class="btn-teacher-behavior inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm hover:shadow">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v1a1 1 0 002 0V7zm-1 3a1 1 0 00-1 1v3a1 1 0 002 0v-3a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                </svg>
+                ثبت تخلف/امتیاز
+              </button>
+
+              {% if teacher.merit_count >= 3 %}
+              <a href="{% url 'core:teacher_appreciation_print' teacher.pk %}" target="_blank" class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm hover:shadow">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M4 2a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H4zm8 0v4h4"/>
+                </svg>
+                چاپ تقدیرنامه
+              </a>
+              {% endif %}
+
               <a href="{% url 'core:teacher_contract' teacher.pk %}" class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm hover:shadow">
                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M4 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V6l-4-4H4zm6 1.5L13.5 7H10V3.5zM6 10h6v1H6v-1zm0 3h6v1H6v-1z"/>
@@ -161,4 +177,141 @@
     </div>
     {% endif %}
   </div>
+
+  <!-- Behavior Modal -->
+  <div id="teacherBehaviorModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-xl w-full animate-slide-up">
+      <div class="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
+        <div>
+          <h3 class="text-lg font-bold text-gray-900">ثبت تخلف/امتیاز</h3>
+          <p id="teacherBehaviorName" class="text-sm text-gray-500">—</p>
+        </div>
+        <button type="button" id="teacherBehaviorCloseBtn" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+          <svg class="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="px-4 pt-4">
+        <div class="inline-flex rounded-lg border border-gray-200 bg-white p-1">
+          <button type="button" data-teacher-behavior-tab="violation" class="teacher-behavior-tab px-4 py-2 rounded-md text-sm font-medium bg-indigo-600 text-white">
+            ثبت تخلف
+          </button>
+          <button type="button" data-teacher-behavior-tab="merit" class="teacher-behavior-tab px-4 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-100">
+            ثبت امتیاز
+          </button>
+        </div>
+      </div>
+
+      <div class="p-4">
+        <div data-teacher-behavior-panel="violation">
+          <form method="post" action="{% url 'core:teacher_behavior_add' %}" class="space-y-4">
+            {% csrf_token %}
+            <input type="hidden" name="teacher_id" class="teacher-behavior-id">
+            <input type="hidden" name="entry_type" value="violation">
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">توضیحات (اختیاری)</label>
+              <textarea name="note" rows="3" class="w-full rounded-lg border border-gray-300 p-3 text-sm focus:ring-2 focus:ring-danger-500 focus:border-danger-500" placeholder="شرح تخلف..."></textarea>
+            </div>
+            <button type="submit" class="inline-flex items-center gap-2 bg-danger-600 hover:bg-danger-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-200">
+              ثبت تخلف
+            </button>
+          </form>
+        </div>
+
+        <div data-teacher-behavior-panel="merit" class="hidden">
+          <form method="post" action="{% url 'core:teacher_behavior_add' %}" class="space-y-4">
+            {% csrf_token %}
+            <input type="hidden" name="teacher_id" class="teacher-behavior-id">
+            <input type="hidden" name="entry_type" value="merit">
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">توضیحات (اختیاری)</label>
+              <textarea name="note" rows="3" class="w-full rounded-lg border border-gray-300 p-3 text-sm focus:ring-2 focus:ring-success-500 focus:border-success-500" placeholder="شرح امتیاز..."></textarea>
+            </div>
+            <button type="submit" class="inline-flex items-center gap-2 bg-success-600 hover:bg-success-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-200">
+              ثبت امتیاز
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const modal = document.getElementById('teacherBehaviorModal');
+      if (!modal) return;
+
+      const openButtons = document.querySelectorAll('.btn-teacher-behavior');
+      const closeBtn = document.getElementById('teacherBehaviorCloseBtn');
+      const nameEl = document.getElementById('teacherBehaviorName');
+      const idInputs = modal.querySelectorAll('.teacher-behavior-id');
+      const tabButtons = modal.querySelectorAll('[data-teacher-behavior-tab]');
+      const panels = modal.querySelectorAll('[data-teacher-behavior-panel]');
+
+      function setActiveTab(tabName) {
+        tabButtons.forEach(btn => {
+          const isActive = btn.getAttribute('data-teacher-behavior-tab') === tabName;
+          btn.classList.toggle('bg-indigo-600', isActive);
+          btn.classList.toggle('text-white', isActive);
+          btn.classList.toggle('text-gray-600', !isActive);
+          btn.classList.toggle('hover:bg-gray-100', !isActive);
+        });
+        panels.forEach(panel => {
+          const isActive = panel.getAttribute('data-teacher-behavior-panel') === tabName;
+          panel.classList.toggle('hidden', !isActive);
+        });
+      }
+
+      function openModal(teacherId, teacherName) {
+        idInputs.forEach(input => {
+          input.value = teacherId;
+        });
+        if (nameEl) {
+          nameEl.textContent = teacherName || '—';
+        }
+        setActiveTab('violation');
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeModal() {
+        modal.classList.add('hidden');
+        document.body.style.overflow = 'auto';
+      }
+
+      openButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+          const teacherId = this.getAttribute('data-teacher-id');
+          const teacherName = this.getAttribute('data-teacher-name');
+          openModal(teacherId, teacherName);
+        });
+      });
+
+      if (closeBtn) {
+        closeBtn.addEventListener('click', closeModal);
+      }
+
+      modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+          closeModal();
+        }
+      });
+
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+          closeModal();
+        }
+      });
+
+      tabButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+          setActiveTab(this.getAttribute('data-teacher-behavior-tab'));
+        });
+      });
+    });
+  </script>
 {% endblock %}

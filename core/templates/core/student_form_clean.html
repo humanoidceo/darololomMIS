@@ -80,7 +80,7 @@
       </div>
     </div>
 
-    <form method="post" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+    <form id="student-wizard-form" method="post" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
       {% csrf_token %}
 
       <!-- Left: image upload -->
@@ -101,181 +101,207 @@
 
       <!-- Right: inputs -->
       <div class="md:col-span-2 space-y-4">
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700">نام و نام خانوادگی</label>
-            {{ form.name|add_class:'mt-1 block w-full rounded-md border-gray-300 border border-2 shadow-sm focus:border-blue-500 focus:ring-blue-500' }}
-            {% if form.name.errors %}
-              <p class="text-xs text-red-600 mt-1">{{ form.name.errors|striptags }}</p>
-            {% endif %}
+        <div class="rounded-xl border border-blue-100 bg-blue-50 p-3">
+          <div class="flex items-center justify-between text-xs text-blue-700">
+            <span id="student-step-counter">مرحله ۱ از ۴</span>
+            <span id="student-step-title">مشخصات فردی</span>
           </div>
-
-          <div>
-            <label class="block text-sm font-medium text-gray-700">نام پدر</label>
-            {{ form.father_name|add_class:'mt-1 block w-full rounded-md border-gray-300 border border-2 shadow-sm focus:border-blue-500 focus:ring-blue-500' }}
-            {% if form.father_name.errors %}
-              <p class="text-xs text-red-600 mt-1">{{ form.father_name.errors|striptags }}</p>
-            {% endif %}
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-gray-700">نام پدر کلان</label>
-            {{ form.grandfather_name|add_class:'mt-1 block w-full rounded-md border-gray-300 border border-2 shadow-sm focus:border-blue-500 focus:ring-blue-500' }}
-            {% if form.grandfather_name.errors %}
-              <p class="text-xs text-red-600 mt-1">{{ form.grandfather_name.errors|striptags }}</p>
-            {% endif %}
+          <div class="mt-3 grid grid-cols-4 gap-2 text-xs sm:text-sm">
+            <button type="button" data-student-step-indicator="1" class="student-step-indicator rounded-md px-2 py-2 font-medium transition-colors">۱. مشخصات</button>
+            <button type="button" data-student-step-indicator="2" class="student-step-indicator rounded-md px-2 py-2 font-medium transition-colors">۲. آدرس</button>
+            <button type="button" data-student-step-indicator="3" class="student-step-indicator rounded-md px-2 py-2 font-medium transition-colors">۳. آموزش</button>
+            <button type="button" data-student-step-indicator="4" class="student-step-indicator rounded-md px-2 py-2 font-medium transition-colors">۴. تماس و صنف</button>
           </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700">قریه</label>
-            {{ form.village|add_class:'mt-1 block w-full rounded-md border-gray-300 border border-2 shadow-sm focus:border-blue-500 focus:ring-blue-500' }}
-            {% if form.village.errors %}
-              <p class="text-xs text-red-600 mt-1">{{ form.village.errors|striptags }}</p>
-            {% endif %}
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-gray-700">ولسوالی</label>
-            {{ form.district|add_class:'mt-1 block w-full rounded-md border-gray-300 border border-2 shadow-sm focus:border-blue-500 focus:ring-blue-500' }}
-            {% if form.district.errors %}
-              <p class="text-xs text-red-600 mt-1">{{ form.district.errors|striptags }}</p>
-            {% endif %}
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-gray-700">ناحیه</label>
-            {{ form.area|add_class:'mt-1 block w-full rounded-md border-gray-300 border border-2 shadow-sm focus:border-blue-500 focus:ring-blue-500' }}
-            {% if form.area.errors %}
-              <p class="text-xs text-red-600 mt-1">{{ form.area.errors|striptags }}</p>
-            {% endif %}
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700">سکونت فعلی</label>
-            {{ form.current_address|add_class:'mt-1 block w-full rounded-md border-gray-300 border border-2 shadow-sm focus:border-blue-500 focus:ring-blue-500' }}
-            {% if form.current_address.errors %}
-              <p class="text-xs text-red-600 mt-1">{{ form.current_address.errors|striptags }}</p>
-            {% endif %}
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-gray-700">سکونت اصلی</label>
-            {{ form.permanent_address|add_class:'mt-1 block w-full rounded-md border-gray-300 border border-2 shadow-sm focus:border-blue-500 focus:ring-blue-500' }}
-            {% if form.permanent_address.errors %}
-              <p class="text-xs text-red-600 mt-1">{{ form.permanent_address.errors|striptags }}</p>
-            {% endif %}
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium text-gray-700">تایم</label>
-          <div class="mt-1 grid grid-cols-2 gap-2 items-center">
-            <div>
-              <label class="block text-xs text-gray-600">تایم آغاز</label>
-              {{ form.time_start|add_class:'mt-1 block w-full rounded-md border-gray-300' }}
-            </div>
-            <div>
-              <label class="block text-xs text-gray-600">تایم ختم</label>
-              {{ form.time_end|add_class:'mt-1 block w-full rounded-md border-gray-300' }}
-            </div>
-          </div>
-
+        <section class="student-step-panel space-y-4" data-student-step="1" data-step-title="مشخصات فردی">
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700">نمبر تذکره</label>
-              {{ form.id_number|add_class:'mt-1 block w-full rounded-md border-gray-300' }}
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700">جنسیت</label>
-              {{ form.gender|add_class:'mt-1 block w-full rounded-md border-gray-300' }}
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700">نمبر امتحان کانکور</label>
-              {{ form.exam_number|add_class:'mt-1 block w-full rounded-md border-gray-300' }}
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700">سطح آموزشی</label>
-              {{ form.level|add_class:'mt-1 block w-full rounded-md border-gray-300 border border-2 shadow-sm focus:border-blue-500 focus:ring-blue-500' }}
-              {% if form.level.errors %}
-                <p class="text-xs text-red-600 mt-1">{{ form.level.errors|striptags }}</p>
+              <label class="block text-sm font-medium text-gray-700">نام و نام خانوادگی</label>
+              {{ form.name|add_class:'mt-1 block w-full rounded-md border-gray-300 border border-2 shadow-sm focus:border-blue-500 focus:ring-blue-500' }}
+              {% if form.name.errors %}
+                <p class="text-xs text-red-600 mt-1">{{ form.name.errors|striptags }}</p>
               {% endif %}
             </div>
-            <div id="grade12-section" class="sm:col-span-2">
-              <label class="block text-sm font-medium text-gray-700">فارغ صنف دوازدهم</label>
-              <label class="inline-flex items-center gap-2 mt-2 text-sm text-gray-700">
-                {{ form.is_grade12_graduate }}
-                <span>فارغ صنف دوازدهم هست</span>
-              </label>
-              <p class="text-xs text-gray-500 mt-1">این گزینه فقط برای دوره عالی است.</p>
-              {% if form.is_grade12_graduate.errors %}
-                <p class="text-xs text-red-600 mt-1">{{ form.is_grade12_graduate.errors|striptags }}</p>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700">نام پدر</label>
+              {{ form.father_name|add_class:'mt-1 block w-full rounded-md border-gray-300 border border-2 shadow-sm focus:border-blue-500 focus:ring-blue-500' }}
+              {% if form.father_name.errors %}
+                <p class="text-xs text-red-600 mt-1">{{ form.father_name.errors|striptags }}</p>
+              {% endif %}
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700">نام پدر کلان</label>
+              {{ form.grandfather_name|add_class:'mt-1 block w-full rounded-md border-gray-300 border border-2 shadow-sm focus:border-blue-500 focus:ring-blue-500' }}
+              {% if form.grandfather_name.errors %}
+                <p class="text-xs text-red-600 mt-1">{{ form.grandfather_name.errors|striptags }}</p>
               {% endif %}
             </div>
           </div>
 
-          <div id="semesters-section" class="mt-4">
-            <label class="block text-sm font-medium text-gray-700">سمسترها (برای دوره عالی)</label>
-            <div class="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {% for checkbox in form.semesters %}
-                <label class="inline-flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-md text-sm text-gray-700">
-                  {{ checkbox.tag }}
-                  <span>{{ checkbox.choice_label }}</span>
+        </section>
+
+        <section class="student-step-panel space-y-4 hidden" data-student-step="2" data-step-title="آدرس">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div class="rounded-lg border border-gray-200 p-4">
+              <p class="text-sm font-medium text-gray-700 mb-3">سکونت اصلی</p>
+              <div class="space-y-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">ولایت اصلی</label>
+                  {{ form.permanent_address|add_class:'mt-1 block w-full rounded-md border-gray-300 border border-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 h-10 resize-none' }}
+                  {% if form.permanent_address.errors %}
+                    <p class="text-xs text-red-600 mt-1">{{ form.permanent_address.errors|striptags }}</p>
+                  {% endif %}
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">ولسوالی</label>
+                  {{ form.district|add_class:'mt-1 block w-full rounded-md border-gray-300 border border-2 shadow-sm focus:border-blue-500 focus:ring-blue-500' }}
+                  {% if form.district.errors %}
+                    <p class="text-xs text-red-600 mt-1">{{ form.district.errors|striptags }}</p>
+                  {% endif %}
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">قریه</label>
+                  {{ form.village|add_class:'mt-1 block w-full rounded-md border-gray-300 border border-2 shadow-sm focus:border-blue-500 focus:ring-blue-500' }}
+                  {% if form.village.errors %}
+                    <p class="text-xs text-red-600 mt-1">{{ form.village.errors|striptags }}</p>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+
+            <div class="rounded-lg border border-gray-200 p-4">
+              <p class="text-sm font-medium text-gray-700 mb-3">سکونت فعلی</p>
+              <div class="space-y-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">ولایت فعلی</label>
+                  {{ form.current_address|add_class:'mt-1 block w-full rounded-md border-gray-300 border border-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 h-10 resize-none' }}
+                  {% if form.current_address.errors %}
+                    <p class="text-xs text-red-600 mt-1">{{ form.current_address.errors|striptags }}</p>
+                  {% endif %}
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">ناحیه</label>
+                  {{ form.area|add_class:'mt-1 block w-full rounded-md border-gray-300 border border-2 shadow-sm focus:border-blue-500 focus:ring-blue-500' }}
+                  {% if form.area.errors %}
+                    <p class="text-xs text-red-600 mt-1">{{ form.area.errors|striptags }}</p>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="student-step-panel space-y-4 hidden" data-student-step="3" data-step-title="اطلاعات آموزشی">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">تایم</label>
+            <div class="mt-1 grid grid-cols-2 gap-2 items-center">
+              <div>
+                <label class="block text-xs text-gray-600">تایم آغاز</label>
+                {{ form.time_start|add_class:'mt-1 block w-full rounded-md border-gray-300' }}
+              </div>
+              <div>
+                <label class="block text-xs text-gray-600">تایم ختم</label>
+                {{ form.time_end|add_class:'mt-1 block w-full rounded-md border-gray-300' }}
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700">نمبر تذکره</label>
+                {{ form.id_number|add_class:'mt-1 block w-full rounded-md border-gray-300' }}
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700">جنسیت</label>
+                {{ form.gender|add_class:'mt-1 block w-full rounded-md border-gray-300' }}
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700">نمبر امتحان کانکور</label>
+                {{ form.exam_number|add_class:'mt-1 block w-full rounded-md border-gray-300' }}
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700">سطح آموزشی</label>
+                {{ form.level|add_class:'mt-1 block w-full rounded-md border-gray-300 border border-2 shadow-sm focus:border-blue-500 focus:ring-blue-500' }}
+                {% if form.level.errors %}
+                  <p class="text-xs text-red-600 mt-1">{{ form.level.errors|striptags }}</p>
+                {% endif %}
+              </div>
+              <div id="grade12-section" class="sm:col-span-2">
+                <label class="block text-sm font-medium text-gray-700">فارغ صنف دوازدهم</label>
+                <label class="inline-flex items-center gap-2 mt-2 text-sm text-gray-700">
+                  {{ form.is_grade12_graduate }}
+                  <span>فارغ صنف دوازدهم هست</span>
                 </label>
-              {% endfor %}
+                <p class="text-xs text-gray-500 mt-1">این گزینه فقط برای دوره عالی است.</p>
+                {% if form.is_grade12_graduate.errors %}
+                  <p class="text-xs text-red-600 mt-1">{{ form.is_grade12_graduate.errors|striptags }}</p>
+                {% endif %}
+              </div>
             </div>
-            {% if form.semesters.errors %}
-              <p class="text-xs text-red-600 mt-1">{{ form.semesters.errors|striptags }}</p>
-            {% endif %}
-          </div>
 
-          <div id="periods-ebtedai-section" class="mt-4">
-            <label class="block text-sm font-medium text-gray-700">دوره‌های ابتداییه</label>
-            <div class="mt-2">
-              <input id="period_ebtedai_search_input" type="text" placeholder="جستجو دوره ابتداییه (۱ تا ۶)" class="block w-full rounded-md border-gray-300 border p-2" autocomplete="off">
-              <div id="selected_periods_ebtedai" class="mt-2 flex flex-wrap gap-2"></div>
+            <div id="semesters-section" class="mt-4">
+              <label class="block text-sm font-medium text-gray-700">سمسترها (برای دوره عالی)</label>
+              <div class="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {% for checkbox in form.semesters %}
+                  <label class="inline-flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-md text-sm text-gray-700">
+                    {{ checkbox.tag }}
+                    <span>{{ checkbox.choice_label }}</span>
+                  </label>
+                {% endfor %}
+              </div>
+              {% if form.semesters.errors %}
+                <p class="text-xs text-red-600 mt-1">{{ form.semesters.errors|striptags }}</p>
+              {% endif %}
             </div>
-            {% if form.periods.errors %}
-              <p class="text-xs text-red-600 mt-1">{{ form.periods.errors|striptags }}</p>
-            {% endif %}
-          </div>
 
-          <div id="periods-moteseta-section" class="mt-4">
-            <label class="block text-sm font-medium text-gray-700">دوره‌های متوسطه</label>
-            <div class="mt-2">
-              <input id="period_moteseta_search_input" type="text" placeholder="جستجو دوره متوسطه (۱ تا ۶)" class="block w-full rounded-md border-gray-300 border p-2" autocomplete="off">
-              <div id="selected_periods_moteseta" class="mt-2 flex flex-wrap gap-2"></div>
+            <div id="periods-ebtedai-section" class="mt-4">
+              <label class="block text-sm font-medium text-gray-700">دوره‌های ابتداییه</label>
+              <div class="mt-2">
+                <input id="period_ebtedai_search_input" type="text" placeholder="جستجو دوره ابتداییه (۱ تا ۶)" class="block w-full rounded-md border-gray-300 border p-2" autocomplete="off">
+                <div id="selected_periods_ebtedai" class="mt-2 flex flex-wrap gap-2"></div>
+              </div>
+              {% if form.periods.errors %}
+                <p class="text-xs text-red-600 mt-1">{{ form.periods.errors|striptags }}</p>
+              {% endif %}
             </div>
-            {% if form.periods.errors %}
-              <p class="text-xs text-red-600 mt-1">{{ form.periods.errors|striptags }}</p>
-            {% endif %}
-          </div>
 
+            <div id="periods-moteseta-section" class="mt-4">
+              <label class="block text-sm font-medium text-gray-700">دوره‌های متوسطه</label>
+              <div class="mt-2">
+                <input id="period_moteseta_search_input" type="text" placeholder="جستجو دوره متوسطه (۱ تا ۶)" class="block w-full rounded-md border-gray-300 border p-2" autocomplete="off">
+                <div id="selected_periods_moteseta" class="mt-2 flex flex-wrap gap-2"></div>
+              </div>
+              {% if form.periods.errors %}
+                <p class="text-xs text-red-600 mt-1">{{ form.periods.errors|striptags }}</p>
+              {% endif %}
+            </div>
+          </div>
+        </section>
+
+        <section class="student-step-panel space-y-4 hidden" data-student-step="4" data-step-title="تماس و صنف">
           <div>
             <label class="block text-sm font-medium text-gray-700 mt-4">صنف</label>
             <div class="relative mt-1">
-              <!-- Hidden field for ForeignKey ID -->
               <input type="hidden" id="id_school_class" name="school_class" value="{% if form.instance.school_class %}{{ form.instance.school_class.id }}{% endif %}">
-              
-              <!-- Visible autocomplete input -->
-              <input 
-                type="text" 
-                id="class_autocomplete" 
+
+              <input
+                type="text"
+                id="class_autocomplete"
                 autocomplete="off"
                 placeholder="صنف را تایپ کنید..."
                 value="{% if form.instance.school_class %}{{ form.instance.school_class.name }}{% endif %}"
                 class="block w-full rounded-md border-gray-300 border-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 focus:ring-2 px-4 py-2.5 text-base"
                 style="direction: rtl;">
-              
-              <!-- Suggestions dropdown -->
+
               <div id="class_suggestions" class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg hidden max-h-60 overflow-auto">
-                <!-- Suggestions will be populated here -->
               </div>
             </div>
             {% if form.school_class.errors %}
@@ -283,16 +309,22 @@
             {% endif %}
           </div>
 
-          <label class="block text-sm font-medium text-gray-700 mt-4">شماره موبایل</label>
-          {{ form.mobile_number|add_class:'mt-1 block w-1/2 rounded-md border-gray-300 border border-2 shadow-sm focus:border-blue-500 focus:ring-blue-500' }}
-          {% if form.mobile_number.errors %}
-            <p class="text-xs text-red-600 mt-1">{{ form.mobile_number.errors|striptags }}</p>
-          {% endif %}
-        </div>
+          <div class="sm:w-1/2">
+            <label class="block text-sm font-medium text-gray-700 mt-4">شماره موبایل</label>
+            {{ form.mobile_number|add_class:'mt-1 block w-full rounded-md border-gray-300 border border-2 shadow-sm focus:border-blue-500 focus:ring-blue-500' }}
+            {% if form.mobile_number.errors %}
+              <p class="text-xs text-red-600 mt-1">{{ form.mobile_number.errors|striptags }}</p>
+            {% endif %}
+          </div>
+        </section>
 
-        <div class="pt-2 flex items-center gap-3">
-          <button type="submit" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md shadow">ثبت دانش‌آموز</button>
+        <div class="pt-4 flex flex-wrap items-center justify-between gap-3 border-t border-gray-200">
           <a href="{% url 'core:student_list' %}" class="inline-flex items-center gap-2 border border-gray-300 px-4 py-2 rounded-md text-gray-700">انصراف</a>
+          <div class="flex items-center gap-2">
+            <button type="button" id="student-prev-step" class="hidden inline-flex items-center gap-2 border border-gray-300 px-4 py-2 rounded-md text-gray-700 hover:bg-gray-50">مرحله قبل</button>
+            <button type="button" id="student-next-step" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md shadow">مرحله بعد</button>
+            <button type="submit" id="student-submit-step" class="hidden inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-md shadow">ثبت دانش‌آموز</button>
+          </div>
         </div>
       </div>
     </form>
@@ -639,6 +671,134 @@
       levelSelect.addEventListener('change', updateSections);
       updateSections();
     }
+  })();
+</script>
+
+<script>
+  (function() {
+    const form = document.getElementById('student-wizard-form');
+    if (!form) return;
+
+    const stepPanels = Array.from(form.querySelectorAll('.student-step-panel'));
+    const stepIndicators = Array.from(form.querySelectorAll('.student-step-indicator'));
+    const prevButton = document.getElementById('student-prev-step');
+    const nextButton = document.getElementById('student-next-step');
+    const submitButton = document.getElementById('student-submit-step');
+    const stepCounter = document.getElementById('student-step-counter');
+    const stepTitle = document.getElementById('student-step-title');
+    const totalSteps = stepPanels.length;
+
+    let currentStep = 1;
+
+    function getPanel(step) {
+      return stepPanels.find((panel) => Number(panel.dataset.studentStep) === Number(step));
+    }
+
+    function setIndicatorStyles(activeStep) {
+      stepIndicators.forEach((indicator) => {
+        const isActive = Number(indicator.dataset.studentStepIndicator) === Number(activeStep);
+        if (isActive) {
+          indicator.classList.remove('bg-white', 'text-gray-600');
+          indicator.classList.add('bg-blue-600', 'text-white');
+          indicator.setAttribute('aria-current', 'step');
+        } else {
+          indicator.classList.remove('bg-blue-600', 'text-white');
+          indicator.classList.add('bg-white', 'text-gray-600');
+          indicator.removeAttribute('aria-current');
+        }
+      });
+    }
+
+    function setStep(step) {
+      const safeStep = Math.min(Math.max(Number(step), 1), totalSteps);
+      currentStep = safeStep;
+
+      stepPanels.forEach((panel) => {
+        panel.classList.toggle('hidden', Number(panel.dataset.studentStep) !== safeStep);
+      });
+
+      if (stepCounter) {
+        stepCounter.textContent = `مرحله ${safeStep} از ${totalSteps}`;
+      }
+
+      const activePanel = getPanel(safeStep);
+      if (stepTitle && activePanel) {
+        stepTitle.textContent = activePanel.dataset.stepTitle || '';
+      }
+
+      if (prevButton) {
+        prevButton.classList.toggle('hidden', safeStep === 1);
+      }
+      if (nextButton) {
+        nextButton.classList.toggle('hidden', safeStep === totalSteps);
+      }
+      if (submitButton) {
+        submitButton.classList.toggle('hidden', safeStep !== totalSteps);
+      }
+
+      setIndicatorStyles(safeStep);
+    }
+
+    function validateStep(step) {
+      const panel = getPanel(step);
+      if (!panel) return true;
+
+      const controls = Array.from(panel.querySelectorAll('input, select, textarea'));
+      for (const control of controls) {
+        if (!control.willValidate) continue;
+        if (!control.checkValidity()) {
+          setStep(step);
+          control.reportValidity();
+          return false;
+        }
+      }
+      return true;
+    }
+
+    if (prevButton) {
+      prevButton.addEventListener('click', function() {
+        setStep(currentStep - 1);
+      });
+    }
+
+    if (nextButton) {
+      nextButton.addEventListener('click', function() {
+        if (!validateStep(currentStep)) return;
+        setStep(currentStep + 1);
+      });
+    }
+
+    stepIndicators.forEach((indicator) => {
+      indicator.addEventListener('click', function() {
+        const targetStep = Number(indicator.dataset.studentStepIndicator);
+        if (!targetStep || targetStep === currentStep) return;
+
+        if (targetStep > currentStep && !validateStep(currentStep)) {
+          return;
+        }
+
+        setStep(targetStep);
+      });
+    });
+
+    form.addEventListener('submit', function(event) {
+      for (let step = 1; step <= totalSteps; step += 1) {
+        if (!validateStep(step)) {
+          event.preventDefault();
+          return;
+        }
+      }
+    });
+
+    const firstError = form.querySelector('p.text-red-600');
+    if (firstError) {
+      const errorPanel = firstError.closest('.student-step-panel');
+      if (errorPanel && errorPanel.dataset.studentStep) {
+        currentStep = Number(errorPanel.dataset.studentStep);
+      }
+    }
+
+    setStep(currentStep);
   })();
 </script>
 {% endblock %}

@@ -43,14 +43,6 @@
             {{ form.contract_date }}
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700">تاریخ شروع</label>
-            {{ form.start_date }}
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700">تاریخ ختم</label>
-            {{ form.end_date }}
-          </div>
-          <div>
             <label class="block text-sm font-medium text-gray-700">معاش ماهوار</label>
             {{ form.monthly_salary }}
           </div>
@@ -58,15 +50,6 @@
             <label class="block text-sm font-medium text-gray-700">وظیفه/سمت</label>
             {{ form.position }}
           </div>
-          <div class="sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">ساعات کاری</label>
-            {{ form.work_hours }}
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium text-gray-700">شرایط و توضیحات</label>
-          {{ form.terms }}
         </div>
 
         <div>
@@ -128,7 +111,7 @@
           <div class="contract-divider"></div>
 
           <div class="mt-6 text-sm leading-7">
-            <p id="preview-terms" class="mt-1 whitespace-pre-wrap">{{ contract.terms|default:default_terms }}</p>
+            <p id="preview-terms" class="mt-1 whitespace-pre-wrap">{{ default_terms }}</p>
           </div>
 
           <div class="mt-10 grid grid-cols-2 gap-8 text-center text-sm">
@@ -293,11 +276,8 @@
     (function(){
       const bindings = [
         { input: 'id_contract_date', output: 'preview-contract-date', fallback: '—', isDate: true },
-        { input: 'id_start_date', output: 'preview-start-date', fallback: '—', isDate: true },
-        { input: 'id_end_date', output: 'preview-end-date', fallback: '—', isDate: true },
         { input: 'id_monthly_salary', output: 'preview-salary', fallback: '—' },
-        { input: 'id_position', output: 'preview-position', fallback: '—' },
-        { input: 'id_work_hours', output: 'preview-work-hours', fallback: '—' }
+        { input: 'id_position', output: 'preview-position', fallback: '—' }
       ];
 
       const afghanMonths = ['حمل','ثور','جوزا','سرطان','اسد','سنبله','میزان','عقرب','قوس','جدی','دلو','حوت'];
@@ -422,7 +402,6 @@
 
       const contractPreview = document.getElementById('contract-preview');
       const termsPreview = document.getElementById('preview-terms');
-      const termsInput = document.getElementById('id_terms');
       const templateEl = document.getElementById('contract-template');
       const defaultTemplate = templateEl ? templateEl.textContent : '';
 
@@ -480,7 +459,7 @@
 
       function renderTerms() {
         if (!termsPreview) return '';
-        const templateText = defaultTemplate || (termsInput ? termsInput.value : '');
+        const templateText = defaultTemplate;
         if (!templateText) return '';
         const tokens = buildTokenMap();
         const rendered = templateText.replace(/\[\[(\w+)\]\]/g, (match, key) => {
@@ -488,9 +467,6 @@
           return match;
         });
         termsPreview.textContent = rendered;
-        if (termsInput) {
-          termsInput.value = rendered;
-        }
         return rendered;
       }
 
@@ -503,7 +479,7 @@
         renderTerms();
       }
 
-      const dateInputIds = ['id_contract_date', 'id_start_date', 'id_end_date'];
+      const dateInputIds = ['id_contract_date'];
 
       function normalizeInitialDates() {
         dateInputIds.forEach((id) => {
@@ -541,10 +517,7 @@
       const formEl = document.querySelector('.contract-form');
       if (formEl) {
         formEl.addEventListener('submit', function(){
-          const renderedTerms = renderTerms();
-          if (termsInput && renderedTerms) {
-            termsInput.value = renderedTerms;
-          }
+          renderTerms();
           dateInputIds.forEach((id) => {
             const input = document.getElementById(id);
             if (!input || !input.value) return;

@@ -98,6 +98,7 @@
               <div class="contract-org-line">معینیت تعلیمات اسلامی</div>
               <div class="contract-org-line contract-org-title">دارالعلوم عالی الحاج سید منصور نادری</div>
               <div class="contract-org-line">مدیریت اداری</div>
+              <div class="contract-org-line">قرارداد خط کارمندان/اساتید</div>
             </div>
             <div class="contract-logo-block">
               <div class="contract-logo">
@@ -114,17 +115,21 @@
             <p id="preview-terms" class="mt-1 whitespace-pre-wrap">{{ default_terms }}</p>
           </div>
 
-          <div class="mt-10 grid grid-cols-2 gap-8 text-center text-sm">
+          <div class="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-8 text-center text-sm">
             <div class="contract-signature">
               <div class="contract-sign-line"></div>
-              <div class="mt-2">امضای استاد</div>
+              <div class="mt-2">نام و امضای کارمند/استاد</div>
+              <div class="mt-1 text-xs text-gray-600">{{ teacher.name|default:'—' }}</div>
             </div>
             <div class="contract-signature">
               <div class="contract-sign-line"></div>
-              <div class="mt-2">امضای مقام دارالعلوم</div>
+              <div class="mt-2">نام و امضای آمر دارالعلوم</div>
+            </div>
+            <div class="contract-signature">
+              <div class="contract-sign-line"></div>
+              <div class="mt-2">نام و امضای مدیر اداری دارالعلوم</div>
             </div>
           </div>
-          <div class="contract-stamp">محل مهر رسمی</div>
         </div>
         <p class="text-xs text-gray-500 mt-3">برای چاپ، از دکمه «دانلود PDF» استفاده کنید. اگر متن طولانی باشد، PDF چند صفحه می‌شود.</p>
       </div>
@@ -214,7 +219,6 @@
       border-top: 2px solid #0f172a;
     }
     .contract-signature {
-      border: 1px dashed #64748b;
       padding: 16px 12px;
       border-radius: 10px;
       min-height: 120px;
@@ -226,21 +230,6 @@
     .contract-sign-line {
       width: 80%;
       border-top: 1px solid #0f172a;
-    }
-    .contract-stamp {
-      position: absolute;
-      left: 40px;
-      bottom: 40px;
-      width: 140px;
-      height: 140px;
-      border: 2px dashed #e5e7eb;
-      color: #e5e7eb;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      font-weight: 700;
     }
     .contract-form input,
     .contract-form textarea,

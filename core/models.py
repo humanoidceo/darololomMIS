@@ -7,6 +7,7 @@ class Student(models.Model):
 	father_name = models.CharField('نام پدر', max_length=255, blank=True)
 	# نام پدر کلان
 	grandfather_name = models.CharField('نام پدر کلان', max_length=255, blank=True)
+	birth_date = models.DateField('تاریخ تولد', blank=True, null=True)
 
 	# شماره تذکره
 	id_number = models.CharField('نمبر تذکره', max_length=100, blank=True)
@@ -119,6 +120,7 @@ class Teacher(models.Model):
 
 	name = models.CharField('نام و تخلص استاد', max_length=255)
 	father_name = models.CharField('نام پدر', max_length=255, blank=True)
+	birth_date = models.DateField('تاریخ تولد', blank=True, null=True)
 	permanent_address = models.TextField('سکونت اصلی', blank=True)
 	current_address = models.TextField('سکونت فعلی', blank=True)
 	# نشانی‌های جزئی

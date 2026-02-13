@@ -141,12 +141,38 @@
             </div>
           </div>
 
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700">جنسیت</label>
+              {{ form.gender|add_class:'mt-1 block w-full rounded-md border-gray-300' }}
+              {% if form.gender.errors %}
+                <p class="text-xs text-red-600 mt-1">{{ form.gender.errors|striptags }}</p>
+              {% endif %}
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700">نمبر تذکره</label>
+              {{ form.id_number|add_class:'mt-1 block w-full rounded-md border-gray-300' }}
+              {% if form.id_number.errors %}
+                <p class="text-xs text-red-600 mt-1">{{ form.id_number.errors|striptags }}</p>
+              {% endif %}
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700">تاریخ تولد</label>
+              {{ form.birth_date|add_class:'mt-1 block w-full rounded-md border-gray-300' }}
+              {% if form.birth_date.errors %}
+                <p class="text-xs text-red-600 mt-1">{{ form.birth_date.errors|striptags }}</p>
+              {% endif %}
+            </div>
+          </div>
+
         </section>
 
         <section class="student-step-panel space-y-4 hidden" data-student-step="2" data-step-title="آدرس">
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div class="rounded-lg border border-gray-200 p-4">
-              <p class="text-sm font-medium text-gray-700 mb-3">سکونت اصلی</p>
+              <p class="text-xl font-medium text-blue-400 mb-3">سکونت اصلی</p>
               <div class="space-y-4">
                 <div>
                   <label class="block text-sm font-medium text-gray-700">ولایت اصلی</label>
@@ -175,7 +201,7 @@
             </div>
 
             <div class="rounded-lg border border-gray-200 p-4">
-              <p class="text-sm font-medium text-gray-700 mb-3">سکونت فعلی</p>
+              <p class="text-xl font-medium text-blue-400 mb-3">سکونت فعلی</p>
               <div class="space-y-4">
                 <div>
                   <label class="block text-sm font-medium text-gray-700">ولایت فعلی</label>
@@ -211,15 +237,7 @@
               </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700">نمبر تذکره</label>
-                {{ form.id_number|add_class:'mt-1 block w-full rounded-md border-gray-300' }}
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700">جنسیت</label>
-                {{ form.gender|add_class:'mt-1 block w-full rounded-md border-gray-300' }}
-              </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-medium text-gray-700">نمبر امتحان کانکور</label>
                 {{ form.exam_number|add_class:'mt-1 block w-full rounded-md border-gray-300' }}
@@ -332,6 +350,9 @@
 
 
 {% block extra_js %}
+  <link rel="stylesheet" href="https://unpkg.com/@majidh1/jalalidatepicker/dist/jalalidatepicker.min.css">
+  <script src="https://unpkg.com/@majidh1/jalalidatepicker/dist/jalalidatepicker.min.js"></script>
+
   {% if period_names %}
     {{ period_names|json_script:"periodNames" }}
   {% else %}
@@ -349,6 +370,18 @@
   {% else %}
     <script id="studentPeriodsMoteseta" type="application/json">[]</script>
   {% endif %}
+
+<script>
+  (function(){
+    const afghanMonths = ['حمل','ثور','جوزا','سرطان','اسد','سنبله','میزان','عقرب','قوس','جدی','دلو','حوت'];
+    if (window.jalaliDatepicker) {
+      jalaliDatepicker.startWatch({
+        time: false,
+        months: afghanMonths,
+      });
+    }
+  })();
+</script>
 
 <script>
   (function(){
@@ -803,6 +836,9 @@
         if (!requireValue('#id_name', 'نام و نام خانوادگی را وارد کنید.', null, step)) return false;
         if (!requireValue('#id_father_name', 'نام پدر را وارد کنید.', null, step)) return false;
         if (!requireValue('#id_grandfather_name', 'نام پدر کلان را وارد کنید.', null, step)) return false;
+        if (!requireValue('#id_gender', 'جنسیت را انتخاب کنید.', null, step)) return false;
+        if (!requireValue('#id_id_number', 'نمبر تذکره را وارد کنید.', null, step)) return false;
+        if (!requireValue('#id_birth_date', 'تاریخ تولد را وارد کنید.', null, step)) return false;
       }
 
       if (step === 2) {
@@ -816,8 +852,6 @@
       if (step === 3) {
         if (!requireValue('#id_time_start', 'تایم آغاز را وارد کنید.', null, step)) return false;
         if (!requireValue('#id_time_end', 'تایم ختم را وارد کنید.', null, step)) return false;
-        if (!requireValue('#id_id_number', 'نمبر تذکره را وارد کنید.', null, step)) return false;
-        if (!requireValue('#id_gender', 'جنسیت را انتخاب کنید.', null, step)) return false;
         if (!requireValue('#id_exam_number', 'نمبر امتحان کانکور را وارد کنید.', null, step)) return false;
         if (!requireValue('#id_level', 'سطح آموزشی را انتخاب کنید.', null, step)) return false;
 

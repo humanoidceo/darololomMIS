@@ -136,6 +136,8 @@ class Teacher(models.Model):
 	education_level = models.CharField('سویه تحصیلی', max_length=2, choices=EDUCATION_CHOICES, default='p')
 	id_number = models.CharField('نمبر تذکره', max_length=100, blank=True)
 	plan_file = models.FileField('پلان درسی', upload_to='teacher_plans/', blank=True, null=True)
+	education_document = models.FileField('اسناد تحصیلی', upload_to='teacher_documents/education/', blank=True, null=True)
+	experience_document = models.FileField('اسناد تجربه کاری', upload_to='teacher_documents/experience/', blank=True, null=True)
 
 	# Relations
 	classes = models.ManyToManyField(SchoolClass, verbose_name='صنوف', blank=True)

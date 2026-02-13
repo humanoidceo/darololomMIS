@@ -346,6 +346,8 @@ class TeacherForm(forms.ModelForm):
             'education_level',
             'id_number',
             'image',
+            'education_document',
+            'experience_document',
         ]
         labels = {
             'name': 'نام و تخلص استاد',
@@ -359,10 +361,25 @@ class TeacherForm(forms.ModelForm):
             'gender': 'جنسیت',
             'education_level': 'سویه تحصیلی',
             'id_number': 'نمبر تذکره',
+            'education_document': 'اسناد تحصیلی',
+            'experience_document': 'اسناد تجربه کاری',
+        }
+        widgets = {
+            'education_document': forms.ClearableFileInput(attrs={
+                'class': 'border border-gray-300 rounded px-2 py-1 w-full text-sm',
+                'accept': '.pdf,image/*',
+            }),
+            'experience_document': forms.ClearableFileInput(attrs={
+                'class': 'border border-gray-300 rounded px-2 py-1 w-full text-sm',
+                'accept': '.pdf,image/*',
+            }),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        if 'education_document' in self.fields:
+            has_existing = bool(self.instance and self.instance.pk and self.instance.education_document)
+            self.fields['education_document'].required = not has_existing
         if self.instance and self.instance.birth_date:
             jy, jm, jd = _gregorian_to_jalali(self.instance.birth_date.year, self.instance.birth_date.month, self.instance.birth_date.day)
             self.initial['birth_date'] = f"{jy:04d}/{jm:02d}/{jd:02d}"
@@ -375,6 +392,14 @@ class TeacherForm(forms.ModelForm):
             return _parse_birth_date(raw)
         except Exception:
             raise ValidationError('تاریخ تولد نامعتبر است.')
+
+    def clean_education_document(self):
+        doc = self.cleaned_data.get('education_document')
+        if doc:
+            return doc
+        if self.instance and self.instance.pk and self.instance.education_document:
+            return self.instance.education_document
+        raise ValidationError('اسناد تحصیلی الزامی است.')
 
 
 class TeacherContractForm(forms.ModelForm):

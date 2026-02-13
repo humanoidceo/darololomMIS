@@ -19,12 +19,60 @@
     -moz-osx-font-smoothing: grayscale !important;
   }
 
+  .certificate-shell {
+    background:
+      radial-gradient(circle at 12% 10%, rgba(16, 185, 129, 0.12), transparent 55%),
+      radial-gradient(circle at 90% 15%, rgba(234, 179, 8, 0.16), transparent 55%),
+      linear-gradient(180deg, #fffaf0, #ffffff 50%, #fff7e6);
+  }
+
+  .certificate-frame {
+    border: 6px double #d4a017;
+    background: #fffaf2;
+    box-shadow: inset 0 0 0 2px rgba(212, 160, 23, 0.3);
+  }
+
+  .certificate-pattern {
+    background-image:
+      repeating-linear-gradient(45deg, rgba(212,160,23,0.08) 0, rgba(212,160,23,0.08) 2px, transparent 2px, transparent 10px),
+      repeating-linear-gradient(-45deg, rgba(16,185,129,0.06) 0, rgba(16,185,129,0.06) 2px, transparent 2px, transparent 10px);
+    opacity: 0.4;
+  }
+
+  .certificate-title {
+    color: #92400e;
+    letter-spacing: 1px;
+  }
+
+  .certificate-badge {
+    border: 1px solid rgba(212,160,23,0.5);
+    background: rgba(255, 247, 237, 0.9);
+  }
+
   @media print {
     body { background: white; }
     .no-print { display: none !important; }
     #certificateContent {
       box-shadow: none !important;
       border: none !important;
+    }
+    @page { size: A4 landscape; margin: 0; }
+    #certificateContent {
+      margin: 0 !important;
+      min-height: 210mm;
+      height: 210mm;
+      width: 297mm;
+    }
+    .certificate-shell { background: white !important; }
+    body * { visibility: hidden !important; }
+    #certificateContent, #certificateContent * {
+      visibility: visible !important;
+    }
+    #certificateContent {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
     }
   }
 </style>
@@ -46,66 +94,58 @@
   </div>
 </div>
 
-<div id="certificateContent" class="bg-white rounded-2xl shadow-soft border border-gray-100 overflow-hidden" style="max-width: 210mm; margin: 0 auto; padding: 40px;">
-  <div class="text-center mb-8 border-b-4 border-amber-600 pb-6">
-    <div class="flex items-center justify-center gap-6 mb-4">
-      <img src="{% url 'core:logo' %}" alt="لوگو" class="w-20 h-20 object-contain" onerror="this.style.display='none';">
-      <div>
-        <h1 class="text-3xl font-extrabold text-gray-900" style="font-size: 32px;">دارالعلوم عالی</h1>
-        <h2 class="text-2xl font-bold text-gray-700" style="font-size: 28px;">الحاج سید منصور نادری</h2>
-      </div>
-    </div>
-    <h3 class="text-2xl font-bold text-amber-700 mt-4" style="font-size: 26px;">سرتفیکت فراغت دوره ابتداییه</h3>
-  </div>
+<div id="certificateContent" class="certificate-shell rounded-2xl shadow-soft border border-amber-200 overflow-hidden" style="max-width: 297mm; margin: 0 auto; padding: 28px;">
+  <div class="certificate-frame rounded-2xl p-8 relative">
+    <div class="certificate-pattern absolute inset-0 rounded-2xl"></div>
 
-  <div class="bg-amber-50 p-6 rounded-xl border-2 border-amber-200 mb-8">
-    <p class="text-lg font-bold text-gray-900 leading-8" style="font-size: 20px;">
-      این گواهی به نام <span class="text-amber-700">{{ student.name }}</span> فرزند <span class="text-amber-700">{{ student.father_name|default:'-' }}</span>
-      صادر می‌گردد که با موفقیت دوره ابتداییه را به پایان رسانیده است.
-    </p>
-  </div>
+    <div class="relative z-10">
+      <div class="flex items-center justify-between mb-6">
+        <div class="flex flex-col items-center">
+          <img src="{% url 'core:emirate_logo' %}" alt="لوگوی امارت" class="w-20 h-20 object-contain" onerror="this.style.display='none';">
+          <span class="mt-2 text-sm font-bold text-gray-700">تاریخ: {{ current_date }}</span>
+        </div>
+        <div class="text-center">
+          <h1 class="text-3xl font-extrabold text-gray-900" style="font-size: 32px;">دارالعلوم عالی الحاج سید منصور نادری</h1>
+          <h2 class="text-xl font-bold text-gray-700 mt-1" style="font-size: 24px;">تصدیق فراغت دوره ابتداییه</h2>
+        </div>
+        <div class="flex flex-col items-center">
+          <img src="{% url 'core:logo' %}" alt="لوگو" class="w-20 h-20 object-contain" onerror="this.style.display='none';">
+          <span class="mt-2 text-sm font-bold text-gray-700">شماره سرتفیکت: {{ student.pk }}</span>
+        </div>
+      </div>
 
-  <div class="grid grid-cols-2 gap-6 mb-8">
-    <div class="space-y-3">
-      <div class="flex items-start gap-2">
-        <span class="font-bold text-gray-700 min-w-[120px]" style="font-size: 18px;">صنف:</span>
-        <span class="font-bold text-gray-900" style="font-size: 18px;">{% if student.school_class %}{{ student.school_class.name }}{% else %}-{% endif %}</span>
-      </div>
-      <div class="flex items-start gap-2">
-        <span class="font-bold text-gray-700 min-w-[120px]" style="font-size: 18px;">دوره:</span>
-        <span class="font-bold text-gray-900" style="font-size: 18px;">{% if period %}{{ period }}{% else %}۶{% endif %}</span>
-      </div>
-    </div>
-    <div class="space-y-3">
-      <div class="flex items-start gap-2">
-        <span class="font-bold text-gray-700 min-w-[120px]" style="font-size: 18px;">تاریخ:</span>
-        <span class="font-bold text-gray-900" style="font-size: 18px;">{{ current_date }}</span>
-      </div>
-      <div class="flex items-start gap-2">
-        <span class="font-bold text-gray-700 min-w-[120px]" style="font-size: 18px;">نمبر تذکره:</span>
-        <span class="font-bold text-gray-900" style="font-size: 18px;">{{ student.id_number|default:'-' }}</span>
-      </div>
-    </div>
-  </div>
+      <div class="text-center mb-8"></div>
 
-  <div class="grid grid-cols-3 gap-8 mt-12 pt-6 border-t-2 border-gray-300">
-    <div class="text-center">
-      <div class="h-16 border-b-2 border-gray-400 mb-2"></div>
-      <p class="font-bold text-gray-700" style="font-size: 16px;">استاد مربوطه</p>
-    </div>
-    <div class="text-center">
-      <div class="h-16 border-b-2 border-gray-400 mb-2"></div>
-      <p class="font-bold text-gray-700" style="font-size: 16px;">مدیر تدریسی</p>
-    </div>
-    <div class="text-center">
-      <div class="h-16 border-b-2 border-gray-400 mb-2"></div>
-      <p class="font-bold text-gray-700" style="font-size: 16px;">رئیس دارالعلوم</p>
-    </div>
-  </div>
+      <div class="bg-white/80 p-6 rounded-xl border border-amber-200 mb-6">
+        <p class="text-lg font-bold text-gray-900 leading-10" style="font-size: 26px;">
+          این تصدیق به نام شاگرد ابتداییه <span class="text-amber-700">{{ student.name }}</span>
+          فرزند شاگرد ابتداییه <span class="text-amber-700">{{ student.father_name|default:'-' }}</span>
+          صادر می‌گردد که با موفقیت دوره ابتداییه را به پایان رسانیده و شایسته ارتقا می‌باشد.
+        </p>
+      </div>
 
-  <div class="text-center mt-8 pt-6 border-t-2 border-gray-300">
-    <p class="text-gray-600 font-bold" style="font-size: 14px;">چهارراهی پروژه تایمنی، جوار مسجد جامع الحاج سید منصور نادری</p>
-    <p class="text-gray-600 font-bold mt-1" style="font-size: 14px;">تلفن تماس: {{ student.mobile_number|default:'-' }}</p>
+      <div class="mb-8"></div>
+
+      <div class="grid grid-cols-3 gap-8 mt-6 pt-6 border-t-2 border-amber-200">
+        <div class="text-center">
+          <div class="h-16 border-b-2 border-gray-400 mb-2"></div>
+          <p class="font-bold text-gray-700" style="font-size: 16px;">استاد مربوطه</p>
+        </div>
+        <div class="text-center">
+          <div class="h-16 border-b-2 border-gray-400 mb-2"></div>
+          <p class="font-bold text-gray-700" style="font-size: 16px;">مدیر تدریسی</p>
+        </div>
+        <div class="text-center">
+          <div class="h-16 border-b-2 border-gray-400 mb-2"></div>
+          <p class="font-bold text-gray-700" style="font-size: 16px;">آمر دارالعلوم</p>
+        </div>
+      </div>
+
+      <div class="text-center mt-6 pt-6 border-t-2 border-amber-200">
+        <p class="text-gray-600 font-bold" style="font-size: 14px;">چهارراهی پروژه تایمنی، جوار مسجد جامع الحاج سید منصور نادری</p>
+        <p class="text-gray-600 font-bold mt-1" style="font-size: 14px;">تلفن تماس: {{ student.mobile_number|default:'-' }}</p>
+      </div>
+    </div>
   </div>
 </div>
 {% endblock %}

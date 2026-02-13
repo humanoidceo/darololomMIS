@@ -1326,7 +1326,9 @@ def student_certificate_print(request, pk):
 		messages.error(request, 'شرایط چاپ سرتفیکت ابتداییه تکمیل نیست.')
 		return redirect(reverse('core:student_exam_results', args=[pk]))
 
-	current_date = datetime.now().strftime('%Y-%m-%d')
+	today = datetime.now()
+	jy, jm, jd = _gregorian_to_jalali(today.year, today.month, today.day)
+	current_date = f"{jy:04d}/{jm:02d}/{jd:02d}"
 	context = {
 		'student': student,
 		'period': latest_period,

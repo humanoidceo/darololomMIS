@@ -130,6 +130,7 @@ class Teacher(models.Model):
 	gender = models.CharField('جنسیت', max_length=10, choices=GENDER_CHOICES, default='male')
 	education_level = models.CharField('سویه تحصیلی', max_length=2, choices=EDUCATION_CHOICES, default='p')
 	id_number = models.CharField('نمبر تذکره', max_length=100, blank=True)
+	plan_file = models.FileField('پلان درسی', upload_to='teacher_plans/', blank=True, null=True)
 
 	# Relations
 	classes = models.ManyToManyField(SchoolClass, verbose_name='صنوف', blank=True)

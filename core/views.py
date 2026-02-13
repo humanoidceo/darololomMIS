@@ -239,6 +239,35 @@ def teacher_behavior_delete(request, pk):
 	return JsonResponse({'ok': True})
 
 
+def teacher_plan_upload(request, pk):
+	"""Upload a teacher's lesson plan PDF."""
+	teacher = get_object_or_404(Teacher, pk=pk)
+	if request.method != 'POST':
+		return redirect(reverse('core:teacher_list'))
+	plan_file = request.FILES.get('plan_file')
+	next_url = request.POST.get('next') or reverse('core:teacher_list')
+	if not plan_file:
+		messages.error(request, 'لطفاً فایل پلان درسی را انتخاب کنید.')
+		return redirect(next_url)
+	if not plan_file.name.lower().endswith('.pdf'):
+		messages.error(request, 'فایل پلان درسی باید PDF باشد.')
+		return redirect(next_url)
+	teacher.plan_file = plan_file
+	teacher.save(update_fields=['plan_file'])
+	messages.success(request, 'پلان درسی با موفقیت اپلود شد.')
+	return redirect(next_url)
+
+
+def teacher_plan_download(request, pk):
+	"""Download a teacher's lesson plan PDF."""
+	teacher = get_object_or_404(Teacher, pk=pk)
+	if not teacher.plan_file:
+		raise Http404()
+	filename = os.path.basename(teacher.plan_file.name)
+	response = FileResponse(teacher.plan_file.open('rb'), as_attachment=True, filename=filename)
+	return response
+
+
 def student_appreciation_print(request, pk):
 	student = get_object_or_404(Student, pk=pk)
 	merit_count = StudentBehavior.objects.filter(student=student, entry_type='merit').count()

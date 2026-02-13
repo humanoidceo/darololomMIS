@@ -237,9 +237,9 @@
               </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div id="exam-number-section" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700">نمبر امتحان کانکور</label>
+                <label class="block text-sm font-medium text-gray-700">نمبر امتحان کانکور (فقط دوره عالی)</label>
                 {{ form.exam_number|add_class:'mt-1 block w-full rounded-md border-gray-300' }}
               </div>
             </div>
@@ -645,6 +645,8 @@
     const periodsEbtedaiSection = document.getElementById('periods-ebtedai-section');
     const periodsMotesetaSection = document.getElementById('periods-moteseta-section');
     const grade12Section = document.getElementById('grade12-section');
+    const examNumberSection = document.getElementById('exam-number-section');
+    const examNumberInput = document.getElementById('id_exam_number');
 
     const levelIds = {
       aali: '{{ level_ids.aali|default:"" }}',
@@ -672,6 +674,7 @@
         if (periodsEbtedaiSection) periodsEbtedaiSection.style.display = 'none';
         if (periodsMotesetaSection) periodsMotesetaSection.style.display = 'none';
         if (grade12Section) grade12Section.style.display = 'none';
+        if (examNumberSection) examNumberSection.style.display = 'none';
         return;
       }
 
@@ -683,6 +686,7 @@
       if (periodsEbtedaiSection) periodsEbtedaiSection.style.display = isEbtedai ? 'block' : 'none';
       if (periodsMotesetaSection) periodsMotesetaSection.style.display = isMoteseta ? 'block' : 'none';
       if (grade12Section) grade12Section.style.display = isAali ? 'block' : 'none';
+      if (examNumberSection) examNumberSection.style.display = isAali ? 'block' : 'none';
 
       if (isAali) {
         clearTags(document.getElementById('selected_periods_ebtedai'));
@@ -692,11 +696,13 @@
         clearTags(document.getElementById('selected_periods_moteseta'));
         const grad = document.getElementById('id_is_grade12_graduate');
         if (grad) grad.checked = false;
+        if (examNumberInput) examNumberInput.value = '';
       } else if (isMoteseta) {
         clearCheckboxes(semestersSection);
         clearTags(document.getElementById('selected_periods_ebtedai'));
         const grad = document.getElementById('id_is_grade12_graduate');
         if (grad) grad.checked = false;
+        if (examNumberInput) examNumberInput.value = '';
       }
     }
 
@@ -852,13 +858,16 @@
       if (step === 3) {
         if (!requireValue('#id_time_start', 'تایم آغاز را وارد کنید.', null, step)) return false;
         if (!requireValue('#id_time_end', 'تایم ختم را وارد کنید.', null, step)) return false;
-        if (!requireValue('#id_exam_number', 'نمبر امتحان کانکور را وارد کنید.', null, step)) return false;
         if (!requireValue('#id_level', 'سطح آموزشی را انتخاب کنید.', null, step)) return false;
 
         const levelValue = (form.querySelector('#id_level') && form.querySelector('#id_level').value) || '';
         const isAali = levelIds.aali && String(levelValue) === String(levelIds.aali);
         const isEbtedai = levelIds.ebtedai && String(levelValue) === String(levelIds.ebtedai);
         const isMoteseta = levelIds.moteseta && String(levelValue) === String(levelIds.moteseta);
+
+        if (isAali) {
+          if (!requireValue('#id_exam_number', 'نمبر امتحان کانکور را وارد کنید.', null, step)) return false;
+        }
 
         if (isAali) {
           if (!requireChecked('#id_is_grade12_graduate', 'برای دوره عالی، گزینه فارغ صنف دوازدهم الزامی است.', step)) return false;

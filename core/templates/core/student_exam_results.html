@@ -103,13 +103,31 @@
       <h1 class="text-3xl font-bold text-gray-900 mb-2">نتیجه امتحانات</h1>
       <p class="text-gray-600">نتیجه آخرین {{ term_label }} ({{ level_name }}) - {{ student.name }}</p>
     </div>
-    <div class="flex gap-3">
+    <div class="flex gap-3 flex-wrap">
       <button onclick="window.print()" class="inline-flex items-center gap-2 bg-success-600 hover:bg-success-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200">
         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
           <path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clip-rule="evenodd"/>
         </svg>
         چاپ نتیجه
       </button>
+      {% if can_graduate_ebtedai %}
+      <a href="{% url 'core:student_certificate_print' student.pk %}" target="_blank" class="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200">
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
+          <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/>
+        </svg>
+        چاپ سرتفیکت ابتداییه
+      </a>
+      <form method="post" action="{% url 'core:student_promote_to_moteseta' student.pk %}" class="inline-block" onsubmit="return confirm('آیا می‌خواهید دانش‌آموز به سطح متوسطه ارتقا یابد؟');">
+        {% csrf_token %}
+        <button type="submit" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200">
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M7 4a1 1 0 011-1h4a1 1 0 011 1v4h2a1 1 0 010 2h-2v4a1 1 0 01-2 0v-4H8a1 1 0 010-2h2V4z" clip-rule="evenodd"/>
+          </svg>
+          ارتقا به متوسطه
+        </button>
+      </form>
+      {% endif %}
       <a href="{% url 'core:student_list' %}" class="inline-flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200">
         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
           <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/>

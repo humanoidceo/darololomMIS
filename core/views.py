@@ -5,6 +5,7 @@ from django.db.models import Q, Count, Prefetch
 from django.contrib import messages
 from django.http import FileResponse, Http404, JsonResponse
 from django.conf import settings
+from django.views.decorators.http import require_POST
 import os
 from .models import Student, SchoolClass, Subject, Teacher, StudyLevel, CoursePeriod, Semester, TeacherContract
 from .models import StudentBehavior, TeacherBehavior
@@ -1107,6 +1108,37 @@ def _auto_promote_student(student):
 	return None
 
 
+def _can_graduate_ebtedai(student):
+	"""Return (True, latest_period) if student passed all subjects in period 6 of ابتداییه."""
+	level_obj = student.level or (student.school_class.level if student.school_class else None)
+	level_map = _ensure_reference_data()
+	if not level_obj:
+		level_obj = level_map.get('ebtedai')
+	if not level_obj or level_obj.code != 'ebtedai':
+		return False, None
+
+	latest_period = student.periods.order_by('-number').first() if student.periods.exists() else None
+	if not latest_period and student.school_class and student.school_class.period:
+		latest_period = student.school_class.period
+	if not latest_period or latest_period.number != 6:
+		return False, latest_period
+
+	subjects = Subject.objects.filter(period=latest_period)
+	subjects = subjects.filter(Q(level=level_obj) | Q(level__isnull=True)).order_by('id')
+	if not subjects.exists():
+		return False, latest_period
+
+	scores_qs = StudentScore.objects.filter(student=student, subject__in=subjects)
+	if scores_qs.count() < subjects.count():
+		return False, latest_period
+	if scores_qs.filter(score__isnull=True).exists():
+		return False, latest_period
+	if scores_qs.filter(score__lt=50).exists():
+		return False, latest_period
+
+	return True, latest_period
+
+
 def api_class_search(request):
 	"""AJAX endpoint for searching SchoolClass by name.
 	
@@ -1243,6 +1275,7 @@ def student_exam_results(request, pk):
 	average = (total_score / subjects_count) if subjects_count > 0 else 0
 	all_passed = all(item['score'] >= 50 for item in scores) if subjects_count > 0 else False
 	overall_status = 'کامیاب' if all_passed else 'ناکام' if subjects_count > 0 else 'نامشخص'
+	can_graduate_ebtedai = bool(all_passed and level_code == 'ebtedai' and latest_period and latest_period.number == 6)
 	
 	# Get current date for report
 	current_date = datetime.now().strftime('%Y-%m-%d')
@@ -1277,6 +1310,56 @@ def student_exam_results(request, pk):
 		'term_value': term_value,
 		'term_value_display': term_value_display,
 		'sheet_title': sheet_title,
+		'can_graduate_ebtedai': can_graduate_ebtedai,
 	}
 	
 	return render(request, 'core/student_exam_results.html', context)
+
+
+def student_certificate_print(request, pk):
+	"""Printable certificate for completing ابتداییه period 6."""
+	from datetime import datetime
+
+	student = get_object_or_404(Student, pk=pk)
+	can_graduate, latest_period = _can_graduate_ebtedai(student)
+	if not can_graduate:
+		messages.error(request, 'شرایط چاپ سرتفیکت ابتداییه تکمیل نیست.')
+		return redirect(reverse('core:student_exam_results', args=[pk]))
+
+	current_date = datetime.now().strftime('%Y-%m-%d')
+	context = {
+		'student': student,
+		'period': latest_period,
+		'current_date': current_date,
+	}
+	return render(request, 'core/student_certificate.html', context)
+
+
+@require_POST
+def student_promote_to_moteseta(request, pk):
+	"""Promote a student from ابتداییه period 6 to متوسطه period 1."""
+	student = get_object_or_404(Student, pk=pk)
+	can_graduate, _ = _can_graduate_ebtedai(student)
+	if not can_graduate:
+		messages.error(request, 'شرایط ارتقا به متوسطه تکمیل نیست.')
+		return redirect(reverse('core:student_exam_results', args=[pk]))
+
+	level_map = _ensure_reference_data()
+	moteseta = level_map.get('moteseta')
+	if not moteseta:
+		messages.error(request, 'سطح متوسطه در سیستم تعریف نشده است.')
+		return redirect(reverse('core:student_exam_results', args=[pk]))
+
+	next_period = CoursePeriod.objects.filter(number=1).first()
+	if not next_period:
+		next_period = CoursePeriod.objects.create(number=1)
+
+	student.level = moteseta
+	student.school_class = None
+	student.is_graduated = False
+	student.save(update_fields=['level', 'school_class', 'is_graduated'])
+	student.periods.set([next_period])
+	student.semesters.clear()
+
+	messages.success(request, 'دانش‌آموز به سطح متوسطه ارتقا یافت. لطفاً صنف جدید را انتخاب کنید.')
+	return redirect(reverse('core:student_edit', args=[pk]))

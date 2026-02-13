@@ -46,6 +46,8 @@ class Student(models.Model):
 	level = models.ForeignKey('StudyLevel', verbose_name='سطح آموزشی', null=True, blank=True, on_delete=models.SET_NULL)
 	# فارغ صنف دوازدهم یا خیر (برای دوره عالی الزامی است)
 	is_grade12_graduate = models.BooleanField('فارغ صنف دوازدهم', default=False)
+	# فارغ از دوره/سمستر در دارالعلوم
+	is_graduated = models.BooleanField('فارغ', default=False)
 	# دوره‌ها (برای ابتداییه و متوسطه)
 	periods = models.ManyToManyField('CoursePeriod', verbose_name='دوره‌ها', blank=True)
 

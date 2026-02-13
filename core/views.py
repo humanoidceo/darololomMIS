@@ -994,6 +994,11 @@ def grade_entry(request):
 
 			saved_subjects.append({'id': sub_id, 'name': subj.name, 'score': score_val, 'op': op})
 
+		# Auto-promotion logic: if student passed all subjects in current term, advance term or mark graduated
+		promotion_message = _auto_promote_student(student)
+		if promotion_message:
+			messages.info(request, promotion_message)
+
 		# Do not redirect: render the form again and show which subjects were saved
 		messages.success(request, f'عملیات ثبت نمرات انجام شد. ایجاد: {created} — بروزرسانی: {updated} — خطاها: {errors}')
 		# Rebuild subjects list for template render (same as GET below)
@@ -1013,6 +1018,93 @@ def grade_entry(request):
 
 	# GET
 	return render(request, 'core/grades_form.html', {'students': students, 'subjects': subjects})
+
+
+def _auto_promote_student(student):
+	"""Promote student to next semester/period if all subjects in current term are passed.
+
+	Returns a message string if promotion or graduation occurred, otherwise None.
+	"""
+	if getattr(student, 'is_graduated', False):
+		return None
+
+	level_obj = student.level or (student.school_class.level if student.school_class else None)
+	level_map = _ensure_reference_data()
+
+	latest_semester = student.semesters.order_by('-number').first() if student.semesters.exists() else None
+	if not latest_semester and student.school_class and student.school_class.semester:
+		latest_semester = student.school_class.semester
+	latest_period = student.periods.order_by('-number').first() if student.periods.exists() else None
+	if not latest_period and student.school_class and student.school_class.period:
+		latest_period = student.school_class.period
+
+	if not level_obj:
+		if latest_semester and not latest_period:
+			level_obj = level_map.get('aali')
+		elif latest_period:
+			level_obj = level_map.get('moteseta') or level_map.get('ebtedai')
+
+	level_code = level_obj.code if level_obj else ''
+	if not level_code:
+		return None
+
+	subjects = Subject.objects.none()
+	if level_code == 'aali':
+		if not latest_semester:
+			return None
+		subjects = Subject.objects.filter(semester=latest_semester.number)
+		subjects = subjects.filter(Q(level=level_obj) | Q(level__isnull=True))
+	elif level_code in ('moteseta', 'ebtedai'):
+		if not latest_period:
+			return None
+		subjects = Subject.objects.filter(period=latest_period)
+		if level_obj:
+			subjects = subjects.filter(Q(level=level_obj) | Q(level__isnull=True))
+	else:
+		return None
+
+	subjects = subjects.order_by('id')
+	if not subjects.exists():
+		return None
+
+	scores_qs = StudentScore.objects.filter(student=student, subject__in=subjects)
+	if scores_qs.count() < subjects.count():
+		return None
+	if scores_qs.filter(score__isnull=True).exists():
+		return None
+	if scores_qs.filter(score__lt=50).exists():
+		return None
+
+	# Passed all subjects, promote or graduate
+	if level_code == 'aali':
+		current = latest_semester.number
+		if current >= 4:
+			student.is_graduated = True
+			student.save(update_fields=['is_graduated'])
+			return 'دانش‌آموز فارغ شد.'
+		next_sem = Semester.objects.filter(number=current + 1).first()
+		if not next_sem:
+			next_sem = Semester.objects.create(number=current + 1)
+		student.semesters.set([next_sem])
+		student.is_graduated = False
+		student.save(update_fields=['is_graduated'])
+		return f'دانش‌آموز به سمستر {current + 1} ارتقا یافت.'
+
+	if level_code in ('moteseta', 'ebtedai'):
+		current = latest_period.number
+		if current >= 6:
+			student.is_graduated = True
+			student.save(update_fields=['is_graduated'])
+			return 'دانش‌آموز فارغ شد.'
+		next_period = CoursePeriod.objects.filter(number=current + 1).first()
+		if not next_period:
+			next_period = CoursePeriod.objects.create(number=current + 1)
+		student.periods.set([next_period])
+		student.is_graduated = False
+		student.save(update_fields=['is_graduated'])
+		return f'دانش‌آموز به دوره {current + 1} ارتقا یافت.'
+
+	return None
 
 
 def api_class_search(request):
@@ -1164,7 +1256,9 @@ def student_exam_results(request, pk):
 		sheet_title = 'پارچه امتحانات دوره ابتداییه'
 	else:
 		sheet_title = 'پارچه امتحانات'
-	
+
+	term_value_display = 'فارغ' if getattr(student, 'is_graduated', False) else term_value
+
 	context = {
 		'student': student,
 		'semester': latest_semester,
@@ -1181,6 +1275,7 @@ def student_exam_results(request, pk):
 		'level_name': level_name,
 		'term_label': term_label,
 		'term_value': term_value,
+		'term_value_display': term_value_display,
 		'sheet_title': sheet_title,
 	}
 	

@@ -193,6 +193,21 @@
                 </svg>
                 چاپ نتیجه آخرین امتحانات
               </a>
+
+              {% if student.certificate_file %}
+              <a href="{{ student.certificate_file.url }}" target="_blank" class="inline-flex items-center gap-2 bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm hover:shadow">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M4 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V6l-4-4H4zm6 1.5L13.5 7H10V3.5zM6 10h6v1H6v-1zm0 3h6v1H6v-1z"/>
+                </svg>
+                مشاهده شهادت‌نامه
+              </a>
+              <a href="{{ student.certificate_file.url }}" download class="inline-flex items-center gap-2 bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm hover:shadow">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M3 14a1 1 0 011-1h12a1 1 0 011 1v2a2 2 0 01-2 2H5a2 2 0 01-2-2v-2zm7-12a1 1 0 011 1v6.586l2.293-2.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 9.586V3a1 1 0 011-1z"/>
+                </svg>
+                دانلود شهادت‌نامه
+              </a>
+              {% endif %}
             </div>
           </div>
         </div>

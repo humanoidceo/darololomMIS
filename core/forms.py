@@ -113,6 +113,7 @@ class StudentForm(forms.ModelForm):
             'time_start',
             'time_end',
             'exam_number',
+            'certificate_file',
             'school_class',
             'mobile_number',
             'image',
@@ -125,6 +126,7 @@ class StudentForm(forms.ModelForm):
             'id_number': 'نمبر تذکره',
             'gender': 'جنسیت',
             'exam_number': 'نمبر امتحان کانکور',
+            'certificate_file': 'شهادت‌نامه',
             'level': 'سطح آموزشی',
             'is_grade12_graduate': 'فارغ صنف دوازدهم',
             'semesters': 'سمسترها',
@@ -148,6 +150,7 @@ class StudentForm(forms.ModelForm):
             'periods': forms.CheckboxSelectMultiple(),
             'time_start': forms.TimeInput(attrs={'type': 'time', 'class': 'border border-gray-300 rounded px-2 py-1'}),
             'time_end': forms.TimeInput(attrs={'type': 'time', 'class': 'border border-gray-300 rounded px-2 py-1'}),
+            'certificate_file': forms.ClearableFileInput(attrs={'accept': 'application/pdf'}),
             'id_number': forms.TextInput(attrs={'class': 'border border-gray-300 rounded px-2 py-1 w-full'}),
             'exam_number': forms.TextInput(attrs={'class': 'border border-gray-300 rounded px-2 py-1 w-full'}),
             'school_class': forms.Select(attrs={'class': 'border border-gray-300 rounded px-2 py-1'}),
@@ -174,6 +177,15 @@ class StudentForm(forms.ModelForm):
         except Exception:
             raise ValidationError('تاریخ تولد نامعتبر است.')
 
+    def clean_certificate_file(self):
+        file = self.cleaned_data.get('certificate_file')
+        if not file:
+            return file
+        name = (file.name or '').lower()
+        if not name.endswith('.pdf'):
+            raise ValidationError('شهادت‌نامه باید فایل PDF باشد.')
+        return file
+
     def clean(self):
         cleaned = super().clean()
         level = cleaned.get('level')
@@ -181,6 +193,8 @@ class StudentForm(forms.ModelForm):
         semesters = cleaned.get('semesters')
         periods = cleaned.get('periods')
         school_class = cleaned.get('school_class')
+        certificate_file = cleaned.get('certificate_file')
+        exam_number = cleaned.get('exam_number')
 
         if not level:
             self.add_error('level', 'لطفاً سطح آموزشی را انتخاب کنید.')
@@ -190,8 +204,12 @@ class StudentForm(forms.ModelForm):
         if level_code == 'aali':
             if not is_grad:
                 self.add_error('is_grade12_graduate', 'برای دوره عالی، فارغ بودن از صنف دوازدهم الزامی است.')
+            if not exam_number:
+                self.add_error('exam_number', 'برای دوره عالی، نمبر امتحان کانکور الزامی است.')
             if not semesters:
                 self.add_error('semesters', 'لطفاً حداقل یک سمستر را انتخاب کنید.')
+            if not certificate_file and not getattr(self.instance, 'certificate_file', None):
+                self.add_error('certificate_file', 'برای دوره عالی، آپلود شهادت‌نامه الزامی است.')
             cleaned['periods'] = []
         else:
             if is_grad:

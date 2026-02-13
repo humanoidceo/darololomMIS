@@ -14,6 +14,7 @@ class Student(models.Model):
 
 	# شماره امتحان کانکور
 	exam_number = models.CharField('نمبر امتحان کانکور', max_length=100, blank=True)
+	certificate_file = models.FileField('شهادت‌نامه', upload_to='student_certificates/', blank=True, null=True)
 
 	# جنسیت: فقط دو آپشن (مذکر / مونث)
 	GENDER_CHOICES = [

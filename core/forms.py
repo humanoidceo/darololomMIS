@@ -208,6 +208,8 @@ class StudentForm(forms.ModelForm):
                 self.add_error('exam_number', 'برای دوره عالی، نمبر امتحان کانکور الزامی است.')
             if not semesters:
                 self.add_error('semesters', 'لطفاً حداقل یک سمستر را انتخاب کنید.')
+            elif hasattr(semesters, '__len__') and len(semesters) > 1:
+                self.add_error('semesters', 'فقط یک سمستر مجاز است.')
             if not certificate_file and not getattr(self.instance, 'certificate_file', None):
                 self.add_error('certificate_file', 'برای دوره عالی، آپلود شهادت‌نامه الزامی است.')
             cleaned['periods'] = []
@@ -216,6 +218,8 @@ class StudentForm(forms.ModelForm):
                 self.add_error('is_grade12_graduate', 'برای دوره ابتداییه/متوسطه، فارغ صنف دوازدهم نباید باشد.')
             if not periods:
                 self.add_error('periods', 'لطفاً حداقل یک دوره را انتخاب کنید.')
+            elif hasattr(periods, '__len__') and len(periods) > 1:
+                self.add_error('periods', 'فقط یک دوره مجاز است.')
             cleaned['semesters'] = []
 
         if level and school_class and school_class.level and school_class.level_id != level.id:

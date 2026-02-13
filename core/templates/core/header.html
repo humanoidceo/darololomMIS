@@ -112,10 +112,65 @@
   .nav-hero .nav-hero-link:nth-child(4) { --accent: 14, 165, 233; --accent-strong: #0ea5e9; }
   .nav-hero .nav-hero-link:nth-child(5) { --accent: 249, 115, 22; --accent-strong: #f97316; }
   .nav-hero .nav-hero-link:nth-child(6) { --accent: 20, 184, 166; --accent-strong: #14b8a6; }
+  .brand-hero {
+    background: linear-gradient(135deg, rgba(15, 118, 110, 0.18), rgba(59, 130, 246, 0.18), rgba(245, 158, 11, 0.16));
+    box-shadow: 0 30px 40px -32px rgba(15, 23, 42, 0.7);
+    padding: 6px;
+  }
+  .brand-hero::before {
+    content: "";
+    position: absolute;
+    inset: -40px;
+    background:
+      radial-gradient(circle at 10% 0%, rgba(59, 130, 246, 0.2), transparent 50%),
+      radial-gradient(circle at 90% 10%, rgba(245, 158, 11, 0.18), transparent 55%),
+      radial-gradient(circle at 50% 120%, rgba(16, 185, 129, 0.2), transparent 60%);
+    filter: blur(30px);
+    opacity: 0.8;
+  }
+  .brand-hero-inner {
+    position: relative;
+    z-index: 1;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(10px) saturate(130%);
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    border-radius: 16px;
+  }
+  .brand-logo {
+    background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0)),
+      linear-gradient(135deg, rgba(14, 116, 144, 0.9), rgba(37, 99, 235, 0.9));
+    border: 2px solid rgba(255, 255, 255, 0.7);
+    box-shadow: 0 16px 28px -18px rgba(15, 23, 42, 0.7);
+  }
+  .brand-title {
+    color: #0f172a;
+    font-size: 1.35rem;
+    font-family: "Peyda", "Vazirmatn", "Noto Naskh Arabic", serif;
+    letter-spacing: -0.2px;
+  }
+  .brand-title:hover {
+    color: #1d4ed8;
+  }
+  .brand-subtitle {
+    color: rgba(15, 23, 42, 0.7);
+    font-weight: 600;
+  }
+  .brand-subtitle svg {
+    color: rgba(15, 118, 110, 0.9);
+  }
+  .brand-hero-inner::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    pointer-events: none;
+  }
   @media (max-width: 960px) {
     .nav-hero-shell { padding: 8px; }
     .nav-hero { padding: 10px; }
     .nav-hero-link { padding: 8px 12px; font-size: 13px; }
+    .brand-title { font-size: 1.1rem; }
   }
   html.dark .nav-hero-shell {
     background: linear-gradient(135deg, rgba(59,130,246,0.22), rgba(16,185,129,0.2), rgba(245,158,11,0.2));
@@ -137,6 +192,25 @@
     border-color: rgba(var(--accent), 0.6);
     box-shadow: 0 18px 30px -22px rgba(var(--accent), 0.75);
   }
+  html.dark .brand-hero {
+    background: linear-gradient(135deg, rgba(14, 116, 144, 0.22), rgba(59, 130, 246, 0.22), rgba(245, 158, 11, 0.2));
+  }
+  html.dark .brand-hero-inner {
+    background: rgba(2, 6, 23, 0.82);
+    border-color: rgba(51, 65, 85, 0.85);
+  }
+  html.dark .brand-title {
+    color: #e2e8f0;
+  }
+  html.dark .brand-title:hover {
+    color: #93c5fd;
+  }
+  html.dark .brand-subtitle {
+    color: rgba(226, 232, 240, 0.7);
+  }
+  html.dark .brand-subtitle svg {
+    color: rgba(94, 234, 212, 0.9);
+  }
   @media (prefers-reduced-motion: reduce) {
     .nav-hero-link,
     .nav-hero-link::before,
@@ -147,19 +221,19 @@
 </style>
 <header class="mb-8">
   <!-- Top bar with logo and brand -->
-  <div class="bg-white rounded-2xl shadow-soft border border-gray-100 overflow-hidden mb-6">
-    <div class="px-6 py-4">
+  <div class="brand-hero relative rounded-2xl overflow-hidden mb-6">
+    <div class="brand-hero-inner px-6 py-4">
       <div class="flex items-center justify-between gap-4">
         <div class="flex items-center gap-4">
           <!-- Logo -->
-          <div class="w-16 h-16 flex items-center justify-center bg-gradient-to-br from-primary-500 to-primary-700 rounded-xl shadow-lg overflow-hidden flex-shrink-0">
+          <div class="brand-logo w-16 h-16 flex items-center justify-center rounded-2xl shadow-lg overflow-hidden flex-shrink-0">
             <img src="{% url 'core:logo' %}" alt="لوگو" class="w-full h-full object-cover" onerror="this.style.display='none'; this.parentElement.innerHTML='<svg class=\'w-8 h-8 text-white\' fill=\'currentColor\' viewBox=\'0 0 20 20\'><path d=\'M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z\'/></svg>';">
           </div>
 
           <!-- Brand Info -->
           <div>
-            <a href="/" class="text-xl font-bold text-gray-900 hover:text-primary-600 transition-colors">دارالعلوم عالی الحاج سید منصور نادری</a>
-            <div class="text-xs text-gray-500 mt-0.5 flex items-center gap-2">
+            <a href="/" class="brand-title text-xl font-bold transition-colors">دارالعلوم عالی الحاج سید منصور نادری</a>
+            <div class="brand-subtitle text-xs mt-0.5 flex items-center gap-2">
               <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm3.293 1.293a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 01-1.414-1.414L7.586 10 5.293 7.707a1 1 0 010-1.414zM11 12a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/>
               </svg>

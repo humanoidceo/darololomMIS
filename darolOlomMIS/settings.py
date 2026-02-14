@@ -234,9 +234,17 @@ SECRET_KEY = 'django-insecure-%6=-6c1gtsrrbpfxg$=!#k22he6*25t6i&!tmy#q(ftqw%t9p%
 DEBUG = os.getenv("DJANGO_DEBUG", "1") == "1"
 
 _allowed_hosts = os.getenv(
-    "DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0", "darololommis.onrender.com"
+    "DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0"
 )
 ALLOWED_HOSTS = [host.strip() for host in _allowed_hosts.split(",") if host.strip()]
+
+# Render sets this at runtime; add it if present.
+_render_host = os.getenv("RENDER_EXTERNAL_HOSTNAME")
+if _render_host:
+    ALLOWED_HOSTS.append(_render_host)
+else:
+    # Fallback to allow Render's subdomains if the env var isn't set.
+    ALLOWED_HOSTS.append(".onrender.com")
 
 
 # Application definition

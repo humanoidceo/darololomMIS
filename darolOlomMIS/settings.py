@@ -246,6 +246,9 @@ else:
     # Fallback to allow Render's subdomains if the env var isn't set.
     ALLOWED_HOSTS.append(".onrender.com")
 
+# Railway host (explicit)
+ALLOWED_HOSTS.append("darololommis-production.up.railway.app")
+
 
 # Application definition
 

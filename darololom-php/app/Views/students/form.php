@@ -42,6 +42,7 @@ $accountEmail = (string) old('account_email', (string) ($linkedUser['email'] ?? 
 $mustSetPassword = empty($linkedUser['id']);
 $birthDateValue = (string) $oldOr('birth_date');
 $jalaliMonths = ['حمل', 'ثور', 'جوزا', 'سرطان', 'اسد', 'سنبله', 'میزان', 'عقرب', 'قوس', 'جدی', 'دلو', 'حوت'];
+$isEditMode = !empty($studentData['id']);
 ?>
 
 <div class="section-title">
@@ -273,9 +274,13 @@ $jalaliMonths = ['حمل', 'ثور', 'جوزا', 'سرطان', 'اسد', 'سنب
             </section>
 
             <div class="full wizard-actions">
-                <button type="button" class="btn btn-default" id="prevStepBtn" disabled>مرحله قبلی</button>
-                <button type="button" class="section-btn btn btn-default" id="nextStepBtn">مرحله بعدی</button>
-                <button class="section-btn btn btn-default" type="submit" id="submitBtn" style="display:none;">ذخیره نهایی</button>
+                <?php if (!$isEditMode): ?>
+                    <button type="button" class="btn btn-default" id="prevStepBtn" disabled>مرحله قبلی</button>
+                    <button type="button" class="section-btn btn btn-default" id="nextStepBtn">مرحله بعدی</button>
+                    <button class="section-btn btn btn-default" type="submit" id="submitBtn" style="display:none;">ذخیره نهایی</button>
+                <?php else: ?>
+                    <button class="section-btn btn btn-default" type="submit" id="submitBtn">ذخیره نهایی</button>
+                <?php endif; ?>
                 <a class="btn btn-default" href="<?= e(url('/students')) ?>">انصراف</a>
             </div>
         </form>
@@ -292,6 +297,7 @@ $jalaliMonths = ['حمل', 'ثور', 'جوزا', 'سرطان', 'اسد', 'سنب
     const prevBtn = document.getElementById('prevStepBtn');
     const nextBtn = document.getElementById('nextStepBtn');
     const submitBtn = document.getElementById('submitBtn');
+    const isTabMode = <?= $isEditMode ? 'true' : 'false' ?>;
 
     const levelSelect = document.getElementById('level_id');
     const schoolClassSearch = document.getElementById('school_class_search');
@@ -335,13 +341,20 @@ $jalaliMonths = ['حمل', 'ثور', 'جوزا', 'سرطان', 'اسد', 'سنب
         panels.forEach((panel, i) => panel.classList.toggle('is-active', i === currentStep));
         steps.forEach((step, i) => {
             step.classList.toggle('is-active', i === currentStep);
-            step.classList.toggle('is-done', i < currentStep);
+            step.classList.toggle('is-done', !isTabMode && i < currentStep);
         });
 
-        prevBtn.disabled = currentStep === 0;
+        if (isTabMode) {
+            if (prevBtn) prevBtn.style.display = 'none';
+            if (nextBtn) nextBtn.style.display = 'none';
+            if (submitBtn) submitBtn.style.display = '';
+            return;
+        }
+
+        if (prevBtn) prevBtn.disabled = currentStep === 0;
         const isLast = currentStep === panels.length - 1;
-        nextBtn.style.display = isLast ? 'none' : '';
-        submitBtn.style.display = isLast ? '' : 'none';
+        if (nextBtn) nextBtn.style.display = isLast ? 'none' : '';
+        if (submitBtn) submitBtn.style.display = isLast ? '' : 'none';
     }
 
     function validateNative(panel) {
@@ -683,16 +696,20 @@ $jalaliMonths = ['حمل', 'ثور', 'جوزا', 'سرطان', 'اسد', 'سنب
         return customValidate(currentStep);
     }
 
-    nextBtn.addEventListener('click', () => {
-        if (!validateCurrentStep()) return;
-        showStep(currentStep + 1);
-    });
+    if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+            if (!validateCurrentStep()) return;
+            showStep(currentStep + 1);
+        });
+    }
 
-    prevBtn.addEventListener('click', () => showStep(currentStep - 1));
+    if (prevBtn) {
+        prevBtn.addEventListener('click', () => showStep(currentStep - 1));
+    }
 
     steps.forEach((step, idx) => {
         step.addEventListener('click', () => {
-            if (idx <= currentStep) showStep(idx);
+            if (isTabMode || idx <= currentStep) showStep(idx);
         });
     });
 

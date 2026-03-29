@@ -11,6 +11,7 @@ $birthDateValue = (string) $oldOr('birth_date');
 $jalaliMonths = ['حمل', 'ثور', 'جوزا', 'سرطان', 'اسد', 'سنبله', 'میزان', 'عقرب', 'قوس', 'جدی', 'دلو', 'حوت'];
 $accountEmail = (string) old('account_email', (string) ($linkedUser['email'] ?? ''));
 $mustSetPassword = empty($linkedUser['id']);
+$isEditMode = !empty($teacher['id']);
 ?>
 
 <div class="section-title">
@@ -187,9 +188,13 @@ $mustSetPassword = empty($linkedUser['id']);
             </section>
 
             <div class="full wizard-actions">
-                <button type="button" class="btn btn-default" id="teacherPrevStepBtn" disabled>مرحله قبلی</button>
-                <button type="button" class="section-btn btn btn-default" id="teacherNextStepBtn">مرحله بعدی</button>
-                <button class="section-btn btn btn-default" type="submit" id="teacherSubmitBtn" style="display:none;">ذخیره نهایی</button>
+                <?php if (!$isEditMode): ?>
+                    <button type="button" class="btn btn-default" id="teacherPrevStepBtn" disabled>مرحله قبلی</button>
+                    <button type="button" class="section-btn btn btn-default" id="teacherNextStepBtn">مرحله بعدی</button>
+                    <button class="section-btn btn btn-default" type="submit" id="teacherSubmitBtn" style="display:none;">ذخیره نهایی</button>
+                <?php else: ?>
+                    <button class="section-btn btn btn-default" type="submit" id="teacherSubmitBtn">ذخیره نهایی</button>
+                <?php endif; ?>
                 <a class="btn btn-default" href="<?= e(url('/teachers')) ?>">انصراف</a>
             </div>
         </form>
@@ -206,6 +211,7 @@ $mustSetPassword = empty($linkedUser['id']);
     const prevBtn = document.getElementById('teacherPrevStepBtn');
     const nextBtn = document.getElementById('teacherNextStepBtn');
     const submitBtn = document.getElementById('teacherSubmitBtn');
+    const isTabMode = <?= $isEditMode ? 'true' : 'false' ?>;
     const accountEmail = document.getElementById('teacher_account_email');
     const accountPassword = document.getElementById('teacher_account_password');
     const accountPasswordConfirm = document.getElementById('teacher_account_password_confirmation');
@@ -223,13 +229,20 @@ $mustSetPassword = empty($linkedUser['id']);
         panels.forEach((panel, i) => panel.classList.toggle('is-active', i === currentStep));
         steps.forEach((step, i) => {
             step.classList.toggle('is-active', i === currentStep);
-            step.classList.toggle('is-done', i < currentStep);
+            step.classList.toggle('is-done', !isTabMode && i < currentStep);
         });
 
-        prevBtn.disabled = currentStep === 0;
+        if (isTabMode) {
+            if (prevBtn) prevBtn.style.display = 'none';
+            if (nextBtn) nextBtn.style.display = 'none';
+            if (submitBtn) submitBtn.style.display = '';
+            return;
+        }
+
+        if (prevBtn) prevBtn.disabled = currentStep === 0;
         const isLast = currentStep === panels.length - 1;
-        nextBtn.style.display = isLast ? 'none' : '';
-        submitBtn.style.display = isLast ? '' : 'none';
+        if (nextBtn) nextBtn.style.display = isLast ? 'none' : '';
+        if (submitBtn) submitBtn.style.display = isLast ? '' : 'none';
     }
 
     function validateNative(panel) {
@@ -407,16 +420,20 @@ $mustSetPassword = empty($linkedUser['id']);
         return customValidate(currentStep);
     }
 
-    nextBtn.addEventListener('click', () => {
-        if (!validateCurrentStep()) return;
-        showStep(currentStep + 1);
-    });
+    if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+            if (!validateCurrentStep()) return;
+            showStep(currentStep + 1);
+        });
+    }
 
-    prevBtn.addEventListener('click', () => showStep(currentStep - 1));
+    if (prevBtn) {
+        prevBtn.addEventListener('click', () => showStep(currentStep - 1));
+    }
 
     steps.forEach((step, idx) => {
         step.addEventListener('click', () => {
-            if (idx <= currentStep) {
+            if (isTabMode || idx <= currentStep) {
                 showStep(idx);
             }
         });

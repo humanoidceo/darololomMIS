@@ -88,14 +88,7 @@ if (defined('JSON_INVALID_UTF8_SUBSTITUTE')) {
                             <a class="btn btn-xs btn-primary" href="<?= e(url('/students/' . $student['id'] . '/appreciation')) ?>" target="_blank">تقدیرنامه</a>
                         <?php endif; ?>
                         <a class="btn btn-xs btn-default" href="<?= e(url('/students/' . $student['id'] . '/id-card')) ?>" target="_blank">ای‌دی کارت</a>
-                        <?php if ($meritCount >= 3): ?>
-                            <a class="btn btn-xs btn-warning" href="<?= e(url('/students/' . $student['id'] . '/certificate')) ?>">سرتفیکت</a>
-                        <?php endif; ?>
                         <?php if (can('manage_students')): ?>
-                            <form method="post" action="<?= e(url('/students/' . $student['id'] . '/promote/moteseta')) ?>" onsubmit="return confirm('دانش‌آموز به متوسطه ارتقا یابد؟');">
-                                <?= csrf_field() ?>
-                                <button class="btn btn-xs btn-default" type="submit">ارتقا به متوسطه</button>
-                            </form>
                             <form method="post" action="<?= e(url('/students/' . $student['id'] . '/delete')) ?>" onsubmit="return confirm('آیا مطمئن هستید؟');">
                                 <?= csrf_field() ?>
                                 <button class="btn btn-xs btn-danger" type="submit">حذف</button>

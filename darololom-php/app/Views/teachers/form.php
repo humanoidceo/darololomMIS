@@ -2,11 +2,6 @@
 $linkedUser = $linkedUser ?? null;
 $oldOr = static fn(string $key, mixed $fallback = ''): mixed => old($key, $teacher[$key] ?? $fallback);
 
-$selectedPeriodIdsInput = old('period_ids', $selectedPeriodIds ?? []);
-if (!is_array($selectedPeriodIdsInput)) {
-    $selectedPeriodIdsInput = [];
-}
-$selectedPeriodIds = array_map('intval', $selectedPeriodIdsInput);
 $birthDateValue = (string) $oldOr('birth_date');
 $jalaliMonths = ['حمل', 'ثور', 'جوزا', 'سرطان', 'اسد', 'سنبله', 'میزان', 'عقرب', 'قوس', 'جدی', 'دلو', 'حوت'];
 $accountEmail = (string) old('account_email', (string) ($linkedUser['email'] ?? ''));
@@ -24,7 +19,7 @@ $isEditMode = !empty($teacher['id']);
             <button type="button" class="wizard-step is-active" data-step-target="1">۱) اطلاعات فردی و سکونت اصلی</button>
             <button type="button" class="wizard-step" data-step-target="2">۲) سکونت فعلی</button>
             <button type="button" class="wizard-step" data-step-target="3">۳) اسناد</button>
-            <button type="button" class="wizard-step" data-step-target="4">۴) تدریس و حساب</button>
+            <button type="button" class="wizard-step" data-step-target="4">۴) حساب</button>
         </div>
 
         <form id="teacherWizardForm" method="post" action="<?= e($formAction) ?>" enctype="multipart/form-data" class="module-form teacher-form-grid" novalidate>
@@ -158,16 +153,6 @@ $isEditMode = !empty($teacher['id']);
             </section>
 
             <section class="wizard-panel" data-step-panel="4">
-                <div class="form-group full picker-group" id="teacher_period_block">
-                    <label>دوره‌ها</label>
-                    <div class="inline-checks">
-                        <?php foreach ($periods as $item): ?>
-                            <label><input type="checkbox" name="period_ids[]" value="<?= e((string) $item['id']) ?>" <?= in_array((int) $item['id'], $selectedPeriodIds, true) ? 'checked' : '' ?>> <?= e((string) $item['number']) ?></label>
-                        <?php endforeach; ?>
-                    </div>
-                    <small class="field-help">در صورت نیاز دوره‌ها را انتخاب کنید.</small>
-                </div>
-
                 <div class="form-group">
                     <label>ایمیل حساب استاد</label>
                     <input class="form-control" type="email" name="account_email" id="teacher_account_email" value="<?= e($accountEmail) ?>" placeholder="مثال: teacher@example.com" required>

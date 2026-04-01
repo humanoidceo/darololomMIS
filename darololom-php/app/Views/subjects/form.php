@@ -82,8 +82,10 @@ $selectedTeacherLabel = $selectedTeacherLabel !== '' ? $selectedTeacherLabel : '
                 <small class="field-help">با انتخاب استاد، مضمون به صورت خودکار با همان استاد مرتبط می‌شود.</small>
             </div>
 
-            <button class="section-btn btn btn-default" type="submit">ذخیره</button>
-            <a class="btn btn-default" href="<?= e(url('/subjects')) ?>">انصراف</a>
+            <div class="form-actions full subject-form-actions">
+                <button class="btn btn-default subject-save-btn" type="submit">ذخیره</button>
+                <a class="btn btn-default subject-cancel-btn" href="<?= e(url('/subjects')) ?>">انصراف</a>
+            </div>
         </form>
     </div>
 </div>

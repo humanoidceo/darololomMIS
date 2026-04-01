@@ -68,3 +68,66 @@
     font-size: 12px;
     color: #667085;
 }
+
+.subject-form-actions {
+    justify-content: flex-start;
+    margin-top: 8px;
+    padding-top: 12px;
+    border-top: 1px solid #e6ecd5;
+    gap: 10px;
+}
+
+.subject-form-actions .btn {
+    min-width: 116px;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: 0.1px;
+    transition: all 0.18s ease;
+}
+
+.subject-form-actions .subject-save-btn {
+    background: linear-gradient(135deg, #9ec11a 0%, #7ea215 100%);
+    border: 1px solid #7f9f1e;
+    color: #ffffff !important;
+    box-shadow: 0 6px 14px rgba(126, 162, 21, 0.24);
+}
+
+.subject-form-actions .subject-save-btn:hover,
+.subject-form-actions .subject-save-btn:focus {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 16px rgba(126, 162, 21, 0.28);
+}
+
+.subject-form-actions .subject-cancel-btn {
+    background: #ffffff;
+    border: 1px solid #cdd9ad;
+    color: #536238;
+}
+
+.subject-form-actions .subject-cancel-btn:hover,
+.subject-form-actions .subject-cancel-btn:focus {
+    background: #f6f9ec;
+    border-color: #b9ca90;
+    color: #44522f;
+}
+
+.subject-form-actions .btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(165, 196, 34, 0.2);
+}
+
+@media (max-width: 767px) {
+    .subject-form-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .subject-form-actions .btn {
+        width: 100%;
+        min-width: 0;
+        text-align: center;
+    }
+}

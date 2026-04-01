@@ -1,1 +1,70 @@
 /* module styles for subjects */
+
+.subject-instructor-combo {
+    position: relative;
+}
+
+.subject-instructor-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    text-align: right;
+    cursor: pointer;
+    gap: 8px;
+}
+
+.subject-instructor-arrow {
+    color: #5f6b7a;
+    flex: 0 0 auto;
+}
+
+.subject-instructor-dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    z-index: 30;
+    background: #fff;
+    border: 1px solid #d8dde5;
+    border-radius: 10px;
+    box-shadow: 0 10px 22px rgba(12, 33, 57, 0.12);
+    padding: 10px;
+}
+
+.subject-instructor-list {
+    margin-top: 8px;
+    max-height: 220px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.subject-instructor-option {
+    width: 100%;
+    border: 1px solid #d8dde5;
+    border-radius: 8px;
+    background: #fff;
+    text-align: right;
+    padding: 8px 10px;
+    font-size: 13px;
+    color: #1f2a37;
+    cursor: pointer;
+}
+
+.subject-instructor-option:hover {
+    border-color: #76a6ff;
+    background: #eef4ff;
+}
+
+.subject-instructor-option.is-selected {
+    border-color: #2563eb;
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.subject-instructor-status {
+    margin-top: 8px;
+    font-size: 12px;
+    color: #667085;
+}

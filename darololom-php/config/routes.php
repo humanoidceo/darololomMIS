@@ -55,6 +55,7 @@ return static function (Router $router): void {
     $router->get('/subjects/{id}/edit', 'SubjectsController@edit');
     $router->post('/subjects/{id}/update', 'SubjectsController@update');
     $router->post('/subjects/{id}/delete', 'SubjectsController@destroy');
+    $router->get('/api/subjects/teachers', 'SubjectsController@apiTeachers');
 
     $router->get('/grades', 'GradesController@index');
     $router->post('/grades/store', 'GradesController@store');

@@ -450,11 +450,14 @@ $returnTo = '/students?level=' . urlencode((string) $level)
                     <?= csrf_field() ?>
                     <input type="hidden" name="student_id" id="studentGradesStudentId" value="">
                     <input type="hidden" name="return_to" value="<?= e($returnTo) ?>">
+                    <input type="hidden" name="changed_subject_ids" id="studentGradesChangedSubjectIds" value="">
                     <div class="grades-modal-state js-grades-modal-message" hidden></div>
 
-                    <table class="table table-striped table-bordered grades-modal-table">
+                    <table class="table table-bordered student-grade-sheet grades-modal-table">
                         <thead>
                             <tr>
+                                <th>مضمون</th>
+                                <th>نمره (0-100)</th>
                                 <th>مضمون</th>
                                 <th>نمره (0-100)</th>
                             </tr>
@@ -481,11 +484,13 @@ $returnTo = '/students?level=' . urlencode((string) $level)
         var fetchTemplate = modal.getAttribute('data-fetch-template') || '';
         var nameEl = document.getElementById('studentGradesStudentName');
         var studentIdInput = document.getElementById('studentGradesStudentId');
+        var changedSubjectIdsInput = document.getElementById('studentGradesChangedSubjectIds');
         var tableBody = modal.querySelector('.js-grades-modal-body');
         var messageEl = modal.querySelector('.js-grades-modal-message');
         var submitButton = modal.querySelector('.js-grades-modal-submit');
         var openButtons = document.querySelectorAll('.js-student-grades-btn');
         var closeButtons = modal.querySelectorAll('.js-student-grades-close');
+        var dirtySubjectMap = {};
 
         function closeModal() {
             modal.hidden = true;
@@ -511,7 +516,7 @@ $returnTo = '/students?level=' . urlencode((string) $level)
             tableBody.innerHTML = '';
             var row = document.createElement('tr');
             var cell = document.createElement('td');
-            cell.colSpan = 2;
+            cell.colSpan = 4;
             cell.className = 'text-center grades-modal-empty-row';
             cell.textContent = message;
             row.appendChild(cell);
@@ -519,48 +524,196 @@ $returnTo = '/students?level=' . urlencode((string) $level)
             submitButton.disabled = true;
         }
 
+        function syncChangedSubjectIds() {
+            if (!changedSubjectIdsInput) {
+                return;
+            }
+            changedSubjectIdsInput.value = Object.keys(dirtySubjectMap).join(',');
+        }
+
         function renderSubjects(subjects) {
             tableBody.innerHTML = '';
+            dirtySubjectMap = {};
+            syncChangedSubjectIds();
 
             if (!Array.isArray(subjects) || subjects.length === 0) {
                 renderEmptyRow('برای این شاگرد مضمون قابل ثبت موجود نیست.');
                 return;
             }
 
-            var renderedCount = 0;
+            var grouped = {};
+            var editableCount = 0;
             subjects.forEach(function (subject) {
                 var subjectId = Number(subject.id || 0);
                 if (!subjectId) {
                     return;
                 }
 
-                var row = document.createElement('tr');
+                var isEditable = subject.editable === true || subject.editable === 1 || subject.editable === '1';
+                if (isEditable) {
+                    editableCount += 1;
+                }
 
+                var termLabel = String(subject.term_label || '—');
+                var termOrder = Number(subject.term_order || 0) || 0;
+                if (!grouped[termLabel]) {
+                    grouped[termLabel] = {
+                        label: termLabel,
+                        order: termOrder,
+                        rows: [],
+                        sum: 0,
+                        max: 0
+                    };
+                }
+
+                var scoreValue = null;
+                if (subject.score !== null && typeof subject.score !== 'undefined' && String(subject.score).trim() !== '') {
+                    var parsedScore = parseInt(String(subject.score), 10);
+                    if (!Number.isNaN(parsedScore)) {
+                        scoreValue = Math.max(0, Math.min(100, parsedScore));
+                    }
+                }
+
+                grouped[termLabel].rows.push({
+                    id: subjectId,
+                    name: String(subject.name || ''),
+                    score: scoreValue,
+                    editable: isEditable
+                });
+
+                if (String(subject.name || '').trim() !== '') {
+                    grouped[termLabel].max += 100;
+                    grouped[termLabel].sum += scoreValue === null ? 0 : scoreValue;
+                }
+            });
+
+            var terms = Object.keys(grouped).map(function (key) {
+                return grouped[key];
+            }).sort(function (a, b) {
+                if (a.order !== b.order) {
+                    return a.order - b.order;
+                }
+                return String(a.label).localeCompare(String(b.label));
+            });
+
+            if (terms.length === 0) {
+                renderEmptyRow('برای این شاگرد مضمون قابل ثبت موجود نیست.');
+                return;
+            }
+
+            function buildSubjectCells(subjectRow) {
                 var nameCell = document.createElement('td');
-                nameCell.textContent = String(subject.name || '—');
-                row.appendChild(nameCell);
+                var scoreCell = document.createElement('td');
+                if (!subjectRow) {
+                    nameCell.className = 'grade-empty';
+                    scoreCell.className = 'grade-empty';
+                    return [nameCell, scoreCell];
+                }
 
-                var inputCell = document.createElement('td');
+                nameCell.textContent = subjectRow.name || '—';
+
                 var input = document.createElement('input');
                 input.type = 'number';
                 input.min = '0';
                 input.max = '100';
                 input.className = 'form-control';
-                input.name = 'scores[' + subjectId + ']';
-                input.value = subject.score === null || typeof subject.score === 'undefined' ? '' : String(subject.score);
-                inputCell.appendChild(input);
-                row.appendChild(inputCell);
+                input.name = 'scores[' + subjectRow.id + ']';
+                input.value = subjectRow.score === null ? '' : String(subjectRow.score);
+                input.setAttribute('data-subject-id', String(subjectRow.id));
+                input.setAttribute('autocomplete', 'off');
+                if (subjectRow.editable) {
+                    input.addEventListener('input', function () {
+                        dirtySubjectMap[String(subjectRow.id)] = true;
+                        syncChangedSubjectIds();
+                    });
+                    input.addEventListener('change', function () {
+                        dirtySubjectMap[String(subjectRow.id)] = true;
+                        syncChangedSubjectIds();
+                    });
+                } else {
+                    input.disabled = true;
+                    input.classList.add('grades-modal-locked-input');
+                    input.title = 'فقط نمرات سمستر/دوره فعلی قابل ویرایش است.';
+                    input.tabIndex = -1;
+                    scoreCell.classList.add('grade-empty');
+                }
+                scoreCell.appendChild(input);
 
-                tableBody.appendChild(row);
-                renderedCount += 1;
-            });
-
-            if (renderedCount === 0) {
-                renderEmptyRow('برای این شاگرد مضمون قابل ثبت موجود نیست.');
-                return;
+                return [nameCell, scoreCell];
             }
 
-            submitButton.disabled = false;
+            function summaryText(termGroup) {
+                if (!termGroup || termGroup.max <= 0) {
+                    return 'مجموع: — | فیصدی: —';
+                }
+                var percent = (termGroup.sum / termGroup.max) * 100;
+                var percentText = percent.toFixed(1).replace(/\.0$/, '');
+                return 'مجموع: ' + String(termGroup.sum) + ' از ' + String(termGroup.max) + ' | فیصدی: ' + percentText + '%';
+            }
+
+            for (var termIndex = 0; termIndex < terms.length; termIndex += 2) {
+                var leftTerm = terms[termIndex];
+                var rightTerm = terms[termIndex + 1] || null;
+
+                var termHeaderRow = document.createElement('tr');
+                termHeaderRow.className = 'grade-term-row';
+
+                var leftTermCell = document.createElement('td');
+                leftTermCell.colSpan = 2;
+                var leftStrong = document.createElement('strong');
+                leftStrong.textContent = leftTerm ? leftTerm.label : '';
+                leftTermCell.appendChild(leftStrong);
+                termHeaderRow.appendChild(leftTermCell);
+
+                var rightTermCell = document.createElement('td');
+                rightTermCell.colSpan = 2;
+                var rightStrong = document.createElement('strong');
+                rightStrong.textContent = rightTerm ? rightTerm.label : '';
+                rightTermCell.appendChild(rightStrong);
+                termHeaderRow.appendChild(rightTermCell);
+
+                tableBody.appendChild(termHeaderRow);
+
+                var leftRows = leftTerm ? leftTerm.rows : [];
+                var rightRows = rightTerm ? rightTerm.rows : [];
+                var maxRows = Math.max(leftRows.length, rightRows.length);
+
+                for (var rowIndex = 0; rowIndex < maxRows; rowIndex += 1) {
+                    var line = document.createElement('tr');
+                    line.className = 'grades-modal-row';
+
+                    var leftCells = buildSubjectCells(leftRows[rowIndex] || null);
+                    var rightCells = buildSubjectCells(rightRows[rowIndex] || null);
+
+                    line.appendChild(leftCells[0]);
+                    line.appendChild(leftCells[1]);
+                    line.appendChild(rightCells[0]);
+                    line.appendChild(rightCells[1]);
+                    tableBody.appendChild(line);
+                }
+
+                var summaryRow = document.createElement('tr');
+                summaryRow.className = 'grade-summary-row';
+
+                var leftSummaryCell = document.createElement('td');
+                leftSummaryCell.colSpan = 2;
+                leftSummaryCell.textContent = summaryText(leftTerm);
+                summaryRow.appendChild(leftSummaryCell);
+
+                var rightSummaryCell = document.createElement('td');
+                rightSummaryCell.colSpan = 2;
+                rightSummaryCell.textContent = rightTerm ? summaryText(rightTerm) : '';
+                summaryRow.appendChild(rightSummaryCell);
+
+                tableBody.appendChild(summaryRow);
+            }
+
+            submitButton.disabled = editableCount === 0;
+            if (editableCount > 0) {
+                setMessage('فقط سطرهای مربوط به سمستر/دوره فعلی قابل ویرایش است.', '');
+            } else {
+                setMessage('در حال حاضر سطر قابل ویرایش برای این شاگرد موجود نیست.', 'is-error');
+            }
         }
 
         function loadStudentSubjects(studentId) {
@@ -598,6 +751,8 @@ $returnTo = '/students?level=' . urlencode((string) $level)
 
             nameEl.textContent = 'دانش‌آموز: ' + studentName;
             studentIdInput.value = studentId;
+            dirtySubjectMap = {};
+            syncChangedSubjectIds();
             modal.hidden = false;
             document.body.classList.add('behavior-modal-open');
 

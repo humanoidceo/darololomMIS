@@ -140,6 +140,8 @@ final class GradesController extends Controller
         if (!is_array($scores)) {
             $scores = [];
         }
+        $hasChangedSubjectIdsField = array_key_exists('changed_subject_ids', $_POST);
+        $changedSubjectIds = $this->parseChangedSubjectIds((string) ($_POST['changed_subject_ids'] ?? ''));
 
         $student = $this->studentProfile($studentId);
         if (!$student) {
@@ -147,7 +149,8 @@ final class GradesController extends Controller
             $this->redirect('/grades');
         }
 
-        $allowedSubjects = $this->availableSubjectsForStudent($student);
+        $currentSubjects = $this->availableSubjectsForStudent($student);
+        $allowedSubjects = $currentSubjects;
         $recordedByTeacherId = null;
 
         if ($role === 'teacher') {
@@ -182,6 +185,9 @@ final class GradesController extends Controller
             if ($subjectId <= 0 || $score === '' || !in_array($subjectId, $allowedSubjectIds, true)) {
                 continue;
             }
+            if ($hasChangedSubjectIdsField && !in_array($subjectId, $changedSubjectIds, true)) {
+                continue;
+            }
 
             $scoreValue = max(0, min(100, (int) $score));
             $stmt->execute([
@@ -192,7 +198,12 @@ final class GradesController extends Controller
             ]);
         }
 
-        flash('success', 'نمرات با موفقیت ذخیره شد.');
+        $promoted = $this->promoteStudentIfEligible($student, $currentSubjects);
+        $successMessage = 'نمرات با موفقیت ذخیره شد.';
+        if ($promoted) {
+            $successMessage .= ' شاگرد به مرحله بعد ارتقا یافت.';
+        }
+        flash('success', $successMessage);
         $returnTo = trim((string) ($_POST['return_to'] ?? ''));
         if ($this->isSafeReturnPath($returnTo)) {
             $this->redirect($returnTo);
@@ -222,7 +233,8 @@ final class GradesController extends Controller
             ], 404);
         }
 
-        $subjects = $this->availableSubjectsForStudent($student);
+        $editableSubjects = $this->availableSubjectsForStudent($student);
+        $subjects = $this->allModalSubjectsForStudent($student);
 
         if ($role === 'teacher') {
             $teacherId = (int) ($user['teacher_id'] ?? 0);
@@ -243,12 +255,21 @@ final class GradesController extends Controller
                 ], 403);
             }
 
+            $editableSubjects = $this->filterSubjectsByAllowedIds($editableSubjects, $assignment['subject_ids']);
             $subjects = $this->filterSubjectsByAllowedIds($subjects, $assignment['subject_ids']);
         } elseif (!is_super_admin() && !can('manage_grades')) {
             $this->jsonResponse([
                 'ok' => false,
                 'message' => 'شما اجازه مدیریت نمرات را ندارید.',
             ], 403);
+        }
+
+        $editableMap = [];
+        foreach ($editableSubjects as $subject) {
+            $subjectId = (int) ($subject['id'] ?? 0);
+            if ($subjectId > 0) {
+                $editableMap[$subjectId] = true;
+            }
         }
 
         $scoreMap = [];
@@ -283,6 +304,9 @@ final class GradesController extends Controller
             $subjectItems[] = [
                 'id' => $subjectKey,
                 'name' => (string) ($subject['name'] ?? ''),
+                'term_label' => (string) ($subject['term_label'] ?? '—'),
+                'term_order' => (int) ($subject['term_order'] ?? 0),
+                'editable' => isset($editableMap[$subjectKey]),
                 'score' => $scoreMap[$subjectKey] ?? null,
             ];
         }
@@ -351,6 +375,68 @@ final class GradesController extends Controller
         return $filtered;
     }
 
+    private function allModalSubjectsForStudent(array $student): array
+    {
+        $levelId = (int) ($student['level_id'] ?? 0);
+        if ($levelId <= 0) {
+            return [];
+        }
+
+        $db = Database::connection();
+        $rows = [];
+
+        if (($student['level_code'] ?? '') === 'aali') {
+            $stmt = $db->prepare(
+                'SELECT id, name, semester
+                 FROM subjects
+                 WHERE level_id = :level_id
+                   AND semester IS NOT NULL
+                   AND semester > 0
+                 ORDER BY semester, name'
+            );
+            $stmt->execute(['level_id' => $levelId]);
+            $rows = $stmt->fetchAll();
+
+            foreach ($rows as &$row) {
+                $semester = (int) ($row['semester'] ?? 0);
+                $termOrder = $this->normalizeAaliTermOrder($semester);
+                $row['term_order'] = $termOrder;
+                $row['term_label'] = $termOrder > 0
+                    ? ('سمستر ' . (string) $termOrder)
+                    : ('سمستر ' . (string) $semester);
+            }
+            unset($row);
+        } else {
+            $stmt = $db->prepare(
+                'SELECT s.id, s.name, cp.number AS period_number
+                 FROM subjects s
+                 JOIN course_periods cp ON cp.id = s.period_id
+                 WHERE s.level_id = :level_id
+                 ORDER BY cp.number, s.name'
+            );
+            $stmt->execute(['level_id' => $levelId]);
+            $rows = $stmt->fetchAll();
+
+            foreach ($rows as &$row) {
+                $periodNumber = (int) ($row['period_number'] ?? 0);
+                $row['term_order'] = $periodNumber;
+                $row['term_label'] = 'دوره ' . (string) ($periodNumber > 0 ? $periodNumber : '—');
+            }
+            unset($row);
+        }
+
+        $rows = $this->uniqueSubjectsById($rows);
+        usort($rows, static function (array $a, array $b): int {
+            $orderCompare = ((int) ($a['term_order'] ?? 0)) <=> ((int) ($b['term_order'] ?? 0));
+            if ($orderCompare !== 0) {
+                return $orderCompare;
+            }
+            return strcmp((string) ($a['name'] ?? ''), (string) ($b['name'] ?? ''));
+        });
+
+        return $rows;
+    }
+
     private function studentProfile(int $studentId): ?array
     {
         $db = Database::connection();
@@ -368,19 +454,45 @@ final class GradesController extends Controller
     private function availableSubjectsForStudent(array $student): array
     {
         $db = Database::connection();
+        $levelId = (int) ($student['level_id'] ?? 0);
+        if ($levelId <= 0) {
+            return [];
+        }
+
+        $classId = (int) ($student['school_class_id'] ?? 0);
+        $classSemesterNumber = 0;
+        $classPeriodId = 0;
+        if ($classId > 0) {
+            $classStmt = $db->prepare(
+                'SELECT sc.period_id, se.number AS semester_number
+                 FROM school_classes sc
+                 LEFT JOIN semesters se ON se.id = sc.semester_id
+                 WHERE sc.id = :class_id
+                 LIMIT 1'
+            );
+            $classStmt->execute(['class_id' => $classId]);
+            $classRow = $classStmt->fetch();
+            if ($classRow) {
+                $classSemesterNumber = (int) ($classRow['semester_number'] ?? 0);
+                $classPeriodId = (int) ($classRow['period_id'] ?? 0);
+            }
+        }
 
         if (($student['level_code'] ?? '') === 'aali') {
-            $semesterStmt = $db->prepare('SELECT semester_id FROM student_semester WHERE student_id = :id ORDER BY semester_id LIMIT 1');
+            $semesterNumber = 0;
+            $semesterStmt = $db->prepare(
+                'SELECT se.number
+                 FROM student_semester ss
+                 JOIN semesters se ON se.id = ss.semester_id
+                 WHERE ss.student_id = :id
+                 ORDER BY se.number DESC
+                 LIMIT 1'
+            );
             $semesterStmt->execute(['id' => $student['id']]);
-            $semesterId = (int) ($semesterStmt->fetchColumn() ?: 0);
-
-            if ($semesterId <= 0) {
-                return [];
+            $semesterNumber = (int) ($semesterStmt->fetchColumn() ?: 0);
+            if ($semesterNumber <= 0) {
+                $semesterNumber = $classSemesterNumber;
             }
-
-            $numberStmt = $db->prepare('SELECT number FROM semesters WHERE id = :id LIMIT 1');
-            $numberStmt->execute(['id' => $semesterId]);
-            $semesterNumber = (int) ($numberStmt->fetchColumn() ?: 0);
 
             $subjectSemesters = $this->subjectSemestersForAaliClass($semesterNumber);
             if ($subjectSemesters === []) {
@@ -389,13 +501,24 @@ final class GradesController extends Controller
 
             $placeholders = implode(',', array_fill(0, count($subjectSemesters), '?'));
             $stmt = $db->prepare("SELECT id, name FROM subjects WHERE level_id = ? AND semester IN ($placeholders) ORDER BY semester, name");
-            $stmt->execute(array_merge([(int) ($student['level_id'] ?? 0)], $subjectSemesters));
-            return $stmt->fetchAll();
+            $stmt->execute(array_merge([$levelId], $subjectSemesters));
+            return $this->uniqueSubjectsById($stmt->fetchAll());
         }
 
-        $periodStmt = $db->prepare('SELECT period_id FROM student_period WHERE student_id = :id ORDER BY period_id LIMIT 1');
+        $periodId = 0;
+        $periodStmt = $db->prepare(
+            'SELECT sp.period_id
+             FROM student_period sp
+             JOIN course_periods cp ON cp.id = sp.period_id
+             WHERE sp.student_id = :id
+             ORDER BY cp.number DESC
+             LIMIT 1'
+        );
         $periodStmt->execute(['id' => $student['id']]);
         $periodId = (int) ($periodStmt->fetchColumn() ?: 0);
+        if ($periodId <= 0) {
+            $periodId = $classPeriodId;
+        }
 
         if ($periodId <= 0) {
             return [];
@@ -403,11 +526,11 @@ final class GradesController extends Controller
 
         $stmt = $db->prepare('SELECT id, name FROM subjects WHERE level_id = :level_id AND period_id = :period_id ORDER BY name');
         $stmt->execute([
-            'level_id' => $student['level_id'],
+            'level_id' => $levelId,
             'period_id' => $periodId,
         ]);
 
-        return $stmt->fetchAll();
+        return $this->uniqueSubjectsById($stmt->fetchAll());
     }
 
     /**
@@ -419,14 +542,307 @@ final class GradesController extends Controller
      */
     private function subjectSemestersForAaliClass(int $studentSemesterNumber): array
     {
-        if (in_array($studentSemesterNumber, [13, 1, 2], true)) {
+        if ($studentSemesterNumber === 13) {
             return [1, 2, 13];
         }
-        if (in_array($studentSemesterNumber, [14, 3, 4], true)) {
+        if ($studentSemesterNumber === 14) {
             return [3, 4, 14];
+        }
+        if (in_array($studentSemesterNumber, [1, 2, 3, 4], true)) {
+            return [$studentSemesterNumber];
         }
 
         return [];
+    }
+
+    private function promoteStudentIfEligible(array $student, array $currentSubjects): bool
+    {
+        $studentId = (int) ($student['id'] ?? 0);
+        $levelId = (int) ($student['level_id'] ?? 0);
+        if ($studentId <= 0 || $levelId <= 0 || $currentSubjects === []) {
+            return false;
+        }
+
+        $subjectIds = array_values(array_unique(array_filter(
+            array_map(static fn (array $row): int => (int) ($row['id'] ?? 0), $currentSubjects),
+            static fn (int $id): bool => $id > 0
+        )));
+        if ($subjectIds === []) {
+            return false;
+        }
+
+        $db = Database::connection();
+        $placeholders = implode(',', array_fill(0, count($subjectIds), '?'));
+        $scoresStmt = $db->prepare(
+            "SELECT subject_id, score
+             FROM student_scores
+             WHERE student_id = ?
+               AND subject_id IN ($placeholders)"
+        );
+        $scoresStmt->execute(array_merge([$studentId], $subjectIds));
+        $scoreMap = [];
+        foreach ($scoresStmt->fetchAll() as $scoreRow) {
+            $scoreMap[(int) ($scoreRow['subject_id'] ?? 0)] = (int) ($scoreRow['score'] ?? -1);
+        }
+
+        foreach ($subjectIds as $subjectId) {
+            if (!isset($scoreMap[$subjectId]) || $scoreMap[$subjectId] < 50) {
+                return false;
+            }
+        }
+
+        if (($student['level_code'] ?? '') === 'aali') {
+            $currentSemesterNumber = $this->currentAaliSemesterNumber($student);
+            $nextSemesterNumber = $this->nextAaliSemesterNumber($currentSemesterNumber);
+            if ($nextSemesterNumber <= 0) {
+                return false;
+            }
+
+            $semesterStmt = $db->prepare('SELECT id FROM semesters WHERE number = :number LIMIT 1');
+            $semesterStmt->execute(['number' => $nextSemesterNumber]);
+            $nextSemesterId = (int) ($semesterStmt->fetchColumn() ?: 0);
+            if ($nextSemesterId <= 0) {
+                return false;
+            }
+
+            $db->prepare('DELETE FROM student_semester WHERE student_id = :student_id')
+                ->execute(['student_id' => $studentId]);
+            $db->prepare('INSERT INTO student_semester (student_id, semester_id) VALUES (:student_id, :semester_id)')
+                ->execute([
+                    'student_id' => $studentId,
+                    'semester_id' => $nextSemesterId,
+                ]);
+            $db->prepare('DELETE FROM student_period WHERE student_id = :student_id')
+                ->execute(['student_id' => $studentId]);
+
+            $classStmt = $db->prepare(
+                'SELECT id
+                 FROM school_classes
+                 WHERE level_id = :level_id AND semester_id = :semester_id
+                 ORDER BY id ASC
+                 LIMIT 1'
+            );
+            $classStmt->execute([
+                'level_id' => $levelId,
+                'semester_id' => $nextSemesterId,
+            ]);
+            $nextClassId = (int) ($classStmt->fetchColumn() ?: 0);
+            if ($nextClassId > 0) {
+                $db->prepare('UPDATE students SET school_class_id = :class_id WHERE id = :student_id')
+                    ->execute([
+                        'class_id' => $nextClassId,
+                        'student_id' => $studentId,
+                    ]);
+            }
+
+            return true;
+        }
+
+        $currentPeriodId = $this->currentPeriodId($student);
+        if ($currentPeriodId <= 0) {
+            return false;
+        }
+
+        $periodNumberStmt = $db->prepare('SELECT number FROM course_periods WHERE id = :id LIMIT 1');
+        $periodNumberStmt->execute(['id' => $currentPeriodId]);
+        $currentPeriodNumber = (int) ($periodNumberStmt->fetchColumn() ?: 0);
+        if ($currentPeriodNumber <= 0) {
+            return false;
+        }
+
+        $nextPeriodNumber = $currentPeriodNumber + 1;
+        $nextPeriodStmt = $db->prepare('SELECT id FROM course_periods WHERE number = :number LIMIT 1');
+        $nextPeriodStmt->execute(['number' => $nextPeriodNumber]);
+        $nextPeriodId = (int) ($nextPeriodStmt->fetchColumn() ?: 0);
+        if ($nextPeriodId <= 0) {
+            return false;
+        }
+
+        $db->prepare('DELETE FROM student_period WHERE student_id = :student_id')
+            ->execute(['student_id' => $studentId]);
+        $db->prepare('INSERT INTO student_period (student_id, period_id) VALUES (:student_id, :period_id)')
+            ->execute([
+                'student_id' => $studentId,
+                'period_id' => $nextPeriodId,
+            ]);
+        $db->prepare('DELETE FROM student_semester WHERE student_id = :student_id')
+            ->execute(['student_id' => $studentId]);
+
+        $classStmt = $db->prepare(
+            'SELECT id
+             FROM school_classes
+             WHERE level_id = :level_id AND period_id = :period_id
+             ORDER BY id ASC
+             LIMIT 1'
+        );
+        $classStmt->execute([
+            'level_id' => $levelId,
+            'period_id' => $nextPeriodId,
+        ]);
+        $nextClassId = (int) ($classStmt->fetchColumn() ?: 0);
+        if ($nextClassId > 0) {
+            $db->prepare('UPDATE students SET school_class_id = :class_id WHERE id = :student_id')
+                ->execute([
+                    'class_id' => $nextClassId,
+                    'student_id' => $studentId,
+                ]);
+        }
+
+        return true;
+    }
+
+    private function currentAaliSemesterNumber(array $student): int
+    {
+        $studentId = (int) ($student['id'] ?? 0);
+        if ($studentId <= 0) {
+            return 0;
+        }
+
+        $db = Database::connection();
+        $stmt = $db->prepare(
+            'SELECT se.number
+             FROM student_semester ss
+             JOIN semesters se ON se.id = ss.semester_id
+             WHERE ss.student_id = :student_id
+             ORDER BY se.number DESC
+             LIMIT 1'
+        );
+        $stmt->execute(['student_id' => $studentId]);
+        $semesterNumber = (int) ($stmt->fetchColumn() ?: 0);
+        if ($semesterNumber > 0) {
+            return $semesterNumber;
+        }
+
+        $classId = (int) ($student['school_class_id'] ?? 0);
+        if ($classId <= 0) {
+            return 0;
+        }
+
+        $classStmt = $db->prepare(
+            'SELECT se.number
+             FROM school_classes sc
+             LEFT JOIN semesters se ON se.id = sc.semester_id
+             WHERE sc.id = :class_id
+             LIMIT 1'
+        );
+        $classStmt->execute(['class_id' => $classId]);
+
+        return (int) ($classStmt->fetchColumn() ?: 0);
+    }
+
+    private function currentPeriodId(array $student): int
+    {
+        $studentId = (int) ($student['id'] ?? 0);
+        if ($studentId <= 0) {
+            return 0;
+        }
+
+        $db = Database::connection();
+        $stmt = $db->prepare(
+            'SELECT sp.period_id
+             FROM student_period sp
+             JOIN course_periods cp ON cp.id = sp.period_id
+             WHERE sp.student_id = :student_id
+             ORDER BY cp.number DESC
+             LIMIT 1'
+        );
+        $stmt->execute(['student_id' => $studentId]);
+        $periodId = (int) ($stmt->fetchColumn() ?: 0);
+        if ($periodId > 0) {
+            return $periodId;
+        }
+
+        return (int) ($student['school_class_id'] ?? 0) > 0
+            ? $this->periodIdFromClass((int) $student['school_class_id'])
+            : 0;
+    }
+
+    private function periodIdFromClass(int $classId): int
+    {
+        if ($classId <= 0) {
+            return 0;
+        }
+
+        $stmt = Database::connection()->prepare(
+            'SELECT period_id
+             FROM school_classes
+             WHERE id = :class_id
+             LIMIT 1'
+        );
+        $stmt->execute(['class_id' => $classId]);
+
+        return (int) ($stmt->fetchColumn() ?: 0);
+    }
+
+    private function nextAaliSemesterNumber(int $currentSemesterNumber): int
+    {
+        if ($currentSemesterNumber === 13) {
+            return 14;
+        }
+        if ($currentSemesterNumber === 14) {
+            return 0;
+        }
+        if (in_array($currentSemesterNumber, [1, 2, 3], true)) {
+            return $currentSemesterNumber + 1;
+        }
+
+        return 0;
+    }
+
+    private function normalizeAaliTermOrder(int $semester): int
+    {
+        if ($semester === 13) {
+            return 1;
+        }
+        if ($semester === 14) {
+            return 3;
+        }
+        if (in_array($semester, [1, 2, 3, 4], true)) {
+            return $semester;
+        }
+
+        return 0;
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $subjects
+     * @return array<int, array<string, mixed>>
+     */
+    private function uniqueSubjectsById(array $subjects): array
+    {
+        $seen = [];
+        $unique = [];
+        foreach ($subjects as $subject) {
+            $subjectId = (int) ($subject['id'] ?? 0);
+            if ($subjectId <= 0 || isset($seen[$subjectId])) {
+                continue;
+            }
+            $seen[$subjectId] = true;
+            $unique[] = $subject;
+        }
+
+        return $unique;
+    }
+
+    /**
+     * @return array<int>
+     */
+    private function parseChangedSubjectIds(string $raw): array
+    {
+        if ($raw === '') {
+            return [];
+        }
+
+        $parts = preg_split('/\s*,\s*/', $raw) ?: [];
+        $ids = [];
+        foreach ($parts as $part) {
+            $id = (int) $part;
+            if ($id > 0) {
+                $ids[$id] = true;
+            }
+        }
+
+        return array_map('intval', array_keys($ids));
     }
 
     private function isSafeReturnPath(string $path): bool

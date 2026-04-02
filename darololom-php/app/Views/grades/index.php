@@ -52,6 +52,7 @@
             <form method="post" action="<?= e(url('/grades/store')) ?>" class="module-form">
                 <?= csrf_field() ?>
                 <input type="hidden" name="student_id" value="<?= e((string) $selectedStudent['id']) ?>">
+                <input type="hidden" name="changed_subject_ids" value="" class="js-changed-subject-ids">
 
                 <table class="table table-striped table-bordered">
                     <thead>
@@ -62,7 +63,7 @@
                         <tr>
                             <td><?= e($subject['name']) ?></td>
                             <td>
-                                <input type="number" min="0" max="100" class="form-control" name="scores[<?= e((string) $subject['id']) ?>]" value="<?= e((string) ($scoreMap[$subject['id']] ?? '')) ?>">
+                                <input type="number" min="0" max="100" class="form-control js-score-input" data-subject-id="<?= e((string) $subject['id']) ?>" name="scores[<?= e((string) $subject['id']) ?>]" value="<?= e((string) ($scoreMap[$subject['id']] ?? '')) ?>" autocomplete="off">
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -81,3 +82,39 @@
         <?php endif; ?>
     </div>
 </div>
+
+<script>
+(function () {
+    var form = document.querySelector('form[action$="/grades/store"]');
+    if (!form) {
+        return;
+    }
+
+    var changedInput = form.querySelector('.js-changed-subject-ids');
+    if (!changedInput) {
+        return;
+    }
+
+    var dirtyMap = {};
+    var scoreInputs = form.querySelectorAll('.js-score-input');
+
+    function syncChangedIds() {
+        changedInput.value = Object.keys(dirtyMap).join(',');
+    }
+
+    scoreInputs.forEach(function (input) {
+        var subjectId = parseInt(input.getAttribute('data-subject-id') || '0', 10);
+        if (!subjectId) {
+            return;
+        }
+
+        function markDirty() {
+            dirtyMap[String(subjectId)] = true;
+            syncChangedIds();
+        }
+
+        input.addEventListener('input', markDirty);
+        input.addEventListener('change', markDirty);
+    });
+})();
+</script>

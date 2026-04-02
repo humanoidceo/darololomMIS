@@ -85,6 +85,10 @@ if (!in_array($activeTab, ['profile', 'grades'], true)) {
                                     $leftRows = $groupedRows[$leftTerm] ?? [];
                                     $rightRows = $rightTerm !== null ? ($groupedRows[$rightTerm] ?? []) : [];
                                     $maxRows = max(count($leftRows), count($rightRows));
+                                    $leftSum = 0;
+                                    $leftMax = 0;
+                                    $rightSum = 0;
+                                    $rightMax = 0;
                                     ?>
                                     <tr class="grade-term-row">
                                         <td colspan="2"><strong><?= e($leftTerm) ?></strong></td>
@@ -96,6 +100,16 @@ if (!in_array($activeTab, ['profile', 'grades'], true)) {
                                         $rightRow = $rightRows[$i] ?? null;
                                         $leftScore = is_array($leftRow) ? ($leftRow['score'] ?? null) : null;
                                         $rightScore = is_array($rightRow) ? ($rightRow['score'] ?? null) : null;
+                                        $leftSubjectName = is_array($leftRow) ? trim((string) ($leftRow['subject_name'] ?? '')) : '';
+                                        $rightSubjectName = is_array($rightRow) ? trim((string) ($rightRow['subject_name'] ?? '')) : '';
+                                        if ($leftSubjectName !== '') {
+                                            $leftMax += 100;
+                                            $leftSum += $leftScore === null ? 0 : (int) $leftScore;
+                                        }
+                                        if ($rightSubjectName !== '') {
+                                            $rightMax += 100;
+                                            $rightSum += $rightScore === null ? 0 : (int) $rightScore;
+                                        }
                                         ?>
                                         <tr>
                                             <td class="<?= $leftRow === null ? 'grade-empty' : '' ?>"><?= $leftRow === null ? '' : e((string) ($leftRow['subject_name'] ?? '')) ?></td>
@@ -104,6 +118,28 @@ if (!in_array($activeTab, ['profile', 'grades'], true)) {
                                             <td class="<?= $rightScore === null ? 'grade-empty' : '' ?>"><?= $rightScore === null ? '' : e((string) $rightScore) ?></td>
                                         </tr>
                                     <?php endfor; ?>
+                                    <?php
+                                    $leftPercentText = $leftMax > 0
+                                        ? rtrim(rtrim(number_format(($leftSum / $leftMax) * 100, 1, '.', ''), '0'), '.')
+                                        : '';
+                                    $rightPercentText = $rightMax > 0
+                                        ? rtrim(rtrim(number_format(($rightSum / $rightMax) * 100, 1, '.', ''), '0'), '.')
+                                        : '';
+                                    $leftSummaryText = $leftMax > 0
+                                        ? ('مجموع: ' . to_persian_number((string) $leftSum) . ' از ' . to_persian_number((string) $leftMax) . ' | فیصدی: ' . to_persian_number($leftPercentText) . '%')
+                                        : 'مجموع: — | فیصدی: —';
+                                    $rightSummaryText = $rightTerm !== null
+                                        ? (
+                                            $rightMax > 0
+                                                ? ('مجموع: ' . to_persian_number((string) $rightSum) . ' از ' . to_persian_number((string) $rightMax) . ' | فیصدی: ' . to_persian_number($rightPercentText) . '%')
+                                                : 'مجموع: — | فیصدی: —'
+                                        )
+                                        : '';
+                                    ?>
+                                    <tr class="grade-summary-row">
+                                        <td colspan="2"><?= e($leftSummaryText) ?></td>
+                                        <td colspan="2"><?= e($rightSummaryText) ?></td>
+                                    </tr>
                                 <?php endforeach; ?>
                             </tbody>
                         </table>

@@ -271,6 +271,13 @@ body.rtl-body .table > tfoot > tr > td {
     text-align: center !important;
 }
 
+.student-grade-sheet .grade-summary-row td {
+    background: #f8fbff;
+    font-weight: 600;
+    text-align: center !important;
+    color: #2a3950;
+}
+
 body.rtl-body .pagination {
     padding-right: 0;
 }
@@ -442,7 +449,7 @@ body.rtl-body .inline-checks label input[type='checkbox'] {
 }
 
 .grades-modal-card {
-    width: min(760px, 100%);
+    width: min(920px, 100%);
 }
 
 .grades-modal-state {
@@ -469,11 +476,35 @@ body.rtl-body .inline-checks label input[type='checkbox'] {
 
 .grades-modal-table td,
 .grades-modal-table th {
+    border: 1px solid #d5dde6 !important;
+    background: #ffffff;
     vertical-align: middle !important;
 }
 
+.grades-modal-table {
+    table-layout: fixed;
+    border-collapse: collapse;
+}
+
+.grades-modal-term-cell {
+    text-align: center !important;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.grades-modal-row.is-locked td {
+    background: #f7f8fb;
+}
+
 .grades-modal-table input[type='number'] {
-    max-width: 160px;
+    max-width: 100%;
+}
+
+.grades-modal-locked-input {
+    background: #eef1f6 !important;
+    color: #8a93a2 !important;
+    cursor: not-allowed;
+    pointer-events: none;
 }
 
 .grades-modal-empty-row {

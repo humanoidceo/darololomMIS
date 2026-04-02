@@ -58,6 +58,7 @@ return static function (Router $router): void {
     $router->get('/api/subjects/teachers', 'SubjectsController@apiTeachers');
 
     $router->get('/grades', 'GradesController@index');
+    $router->get('/grades/student/{id}/modal-data', 'GradesController@studentModalData');
     $router->post('/grades/store', 'GradesController@store');
 
     $router->get('/contracts/{teacherId}', 'ContractsController@show');

@@ -10,6 +10,16 @@ if ($selectedTeacherLabel === '' && !empty($selectedTeacher)) {
     }
 }
 $selectedTeacherLabel = $selectedTeacherLabel !== '' ? $selectedTeacherLabel : 'انتخاب استاد';
+$selectedSemesterNumber = (int) $oldOr('semester', 1);
+if ($selectedSemesterNumber === 13) {
+    $selectedSemesterNumber = 1;
+} elseif ($selectedSemesterNumber === 14) {
+    $selectedSemesterNumber = 3;
+}
+if (!in_array($selectedSemesterNumber, [1, 2, 3, 4], true)) {
+    $selectedSemesterNumber = 1;
+}
+$selectedSemester = (string) $selectedSemesterNumber;
 ?>
 
 <div class="section-title">
@@ -46,9 +56,10 @@ $selectedTeacherLabel = $selectedTeacherLabel !== '' ? $selectedTeacherLabel : '
                 <label>سمستر</label>
                 <select name="semester" id="subject_semester" class="form-control">
                     <?php for ($i = 1; $i <= 4; $i++): ?>
-                        <option value="<?= $i ?>" <?= (string) $oldOr('semester', 1) === (string) $i ? 'selected' : '' ?>><?= $i ?></option>
+                        <option value="<?= $i ?>" <?= $selectedSemester === (string) $i ? 'selected' : '' ?>>سمستر <?= e(to_persian_number((string) $i)) ?></option>
                     <?php endfor; ?>
                 </select>
+                <small class="field-help">نگاشت خودکار: سمستر ۱ و ۲ مربوط صنف ۱۳ است، سمستر ۳ و ۴ مربوط صنف ۱۴ است.</small>
             </div>
 
             <div class="form-group" id="subject_period_group">

@@ -419,6 +419,50 @@ body.rtl-body .inline-checks label input[type='checkbox'] {
     padding: 16px;
 }
 
+.grades-modal-card {
+    width: min(760px, 100%);
+}
+
+.grades-modal-state {
+    margin-bottom: 10px;
+    padding: 9px 11px;
+    border-radius: 8px;
+    border: 1px solid #dde7bc;
+    background: #f7faee;
+    color: #53642e;
+    font-size: 13px;
+}
+
+.grades-modal-state.is-loading {
+    background: #eef5ff;
+    border-color: #cfe0f6;
+    color: #385a88;
+}
+
+.grades-modal-state.is-error {
+    background: #fff2f2;
+    border-color: #f3d1d1;
+    color: #8b2f2f;
+}
+
+.grades-modal-table td,
+.grades-modal-table th {
+    vertical-align: middle !important;
+}
+
+.grades-modal-table input[type='number'] {
+    max-width: 160px;
+}
+
+.grades-modal-empty-row {
+    color: #77855d;
+    background: #fafcf5;
+}
+
+.grades-modal-actions {
+    margin-top: 10px;
+}
+
 .behavior-tab-wrap {
     display: inline-flex;
     border: 1px solid #d9e6b5;

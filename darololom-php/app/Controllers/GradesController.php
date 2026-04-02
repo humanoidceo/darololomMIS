@@ -193,7 +193,108 @@ final class GradesController extends Controller
         }
 
         flash('success', 'نمرات با موفقیت ذخیره شد.');
+        $returnTo = trim((string) ($_POST['return_to'] ?? ''));
+        if ($this->isSafeReturnPath($returnTo)) {
+            $this->redirect($returnTo);
+        }
+
         $this->redirect('/grades?student_id=' . $studentId);
+    }
+
+    public function studentModalData(array $params = []): void
+    {
+        $user = $this->requireAuth();
+        $role = (string) ($user['role'] ?? '');
+        $studentId = $this->intParam($params, 'id');
+
+        if ($studentId <= 0) {
+            $this->jsonResponse([
+                'ok' => false,
+                'message' => 'دانش‌آموز انتخاب‌شده معتبر نیست.',
+            ], 422);
+        }
+
+        $student = $this->studentProfile($studentId);
+        if (!$student) {
+            $this->jsonResponse([
+                'ok' => false,
+                'message' => 'دانش‌آموز پیدا نشد.',
+            ], 404);
+        }
+
+        $subjects = $this->availableSubjectsForStudent($student);
+
+        if ($role === 'teacher') {
+            $teacherId = (int) ($user['teacher_id'] ?? 0);
+            if ($teacherId <= 0) {
+                $this->jsonResponse([
+                    'ok' => false,
+                    'message' => 'حساب استاد به پروفایل استاد متصل نیست.',
+                ], 403);
+            }
+
+            $assignment = $this->teacherAssignmentData($teacherId);
+            $studentClassId = (int) ($student['school_class_id'] ?? 0);
+
+            if (!in_array($studentClassId, $assignment['class_ids'], true)) {
+                $this->jsonResponse([
+                    'ok' => false,
+                    'message' => 'شما اجازه ثبت نمره برای این شاگرد را ندارید.',
+                ], 403);
+            }
+
+            $subjects = $this->filterSubjectsByAllowedIds($subjects, $assignment['subject_ids']);
+        } elseif (!is_super_admin() && !can('manage_grades')) {
+            $this->jsonResponse([
+                'ok' => false,
+                'message' => 'شما اجازه مدیریت نمرات را ندارید.',
+            ], 403);
+        }
+
+        $scoreMap = [];
+        if ($subjects !== []) {
+            $db = Database::connection();
+            $subjectIds = array_map(static fn (array $row): int => (int) ($row['id'] ?? 0), $subjects);
+            $subjectIds = array_values(array_filter($subjectIds, static fn (int $id): bool => $id > 0));
+
+            if ($subjectIds !== []) {
+                $placeholders = implode(',', array_fill(0, count($subjectIds), '?'));
+                $scoresStmt = $db->prepare(
+                    "SELECT subject_id, score
+                     FROM student_scores
+                     WHERE student_id = ?
+                     AND subject_id IN ($placeholders)"
+                );
+                $scoresStmt->execute(array_merge([$studentId], $subjectIds));
+
+                foreach ($scoresStmt->fetchAll() as $row) {
+                    $scoreMap[(int) $row['subject_id']] = (int) $row['score'];
+                }
+            }
+        }
+
+        $subjectItems = [];
+        foreach ($subjects as $subject) {
+            $subjectKey = (int) ($subject['id'] ?? 0);
+            if ($subjectKey <= 0) {
+                continue;
+            }
+
+            $subjectItems[] = [
+                'id' => $subjectKey,
+                'name' => (string) ($subject['name'] ?? ''),
+                'score' => $scoreMap[$subjectKey] ?? null,
+            ];
+        }
+
+        $this->jsonResponse([
+            'ok' => true,
+            'student' => [
+                'id' => (int) $student['id'],
+                'name' => (string) ($student['name'] ?? ''),
+            ],
+            'subjects' => $subjectItems,
+        ]);
     }
 
     private function teacherAssignmentData(int $teacherId): array
@@ -281,11 +382,14 @@ final class GradesController extends Controller
             $numberStmt->execute(['id' => $semesterId]);
             $semesterNumber = (int) ($numberStmt->fetchColumn() ?: 0);
 
-            $stmt = $db->prepare('SELECT id, name FROM subjects WHERE level_id = :level_id AND semester = :semester ORDER BY name');
-            $stmt->execute([
-                'level_id' => $student['level_id'],
-                'semester' => $semesterNumber,
-            ]);
+            $subjectSemesters = $this->subjectSemestersForAaliClass($semesterNumber);
+            if ($subjectSemesters === []) {
+                return [];
+            }
+
+            $placeholders = implode(',', array_fill(0, count($subjectSemesters), '?'));
+            $stmt = $db->prepare("SELECT id, name FROM subjects WHERE level_id = ? AND semester IN ($placeholders) ORDER BY semester, name");
+            $stmt->execute(array_merge([(int) ($student['level_id'] ?? 0)], $subjectSemesters));
             return $stmt->fetchAll();
         }
 
@@ -304,5 +408,49 @@ final class GradesController extends Controller
         ]);
 
         return $stmt->fetchAll();
+    }
+
+    /**
+     * سمسترهای مضامین سطح عالی را بر اساس صنف شاگرد برمی‌گرداند.
+     * 1 و 2 مربوط صنف 13، و 3 و 4 مربوط صنف 14 است.
+     * مقادیر 13 و 14 برای سازگاری داده‌های قبلی نیز لحاظ شده‌اند.
+     *
+     * @return array<int>
+     */
+    private function subjectSemestersForAaliClass(int $studentSemesterNumber): array
+    {
+        if (in_array($studentSemesterNumber, [13, 1, 2], true)) {
+            return [1, 2, 13];
+        }
+        if (in_array($studentSemesterNumber, [14, 3, 4], true)) {
+            return [3, 4, 14];
+        }
+
+        return [];
+    }
+
+    private function isSafeReturnPath(string $path): bool
+    {
+        if ($path === '' || $path[0] !== '/') {
+            return false;
+        }
+        if (preg_match('/[\r\n]/', $path) === 1 || str_starts_with($path, '//')) {
+            return false;
+        }
+
+        $parts = parse_url($path);
+        if ($parts === false) {
+            return false;
+        }
+
+        return !isset($parts['scheme']) && !isset($parts['host']);
+    }
+
+    private function jsonResponse(array $payload, int $statusCode = 200): void
+    {
+        http_response_code($statusCode);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        exit;
     }
 }

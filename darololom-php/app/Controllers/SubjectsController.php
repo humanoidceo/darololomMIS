@@ -288,10 +288,20 @@ final class SubjectsController extends Controller
 
     private function payload(): array
     {
+        $semester = (int) ($_POST['semester'] ?? 1);
+        if ($semester === 13) {
+            $semester = 1;
+        } elseif ($semester === 14) {
+            $semester = 3;
+        }
+        if (!in_array($semester, [1, 2, 3, 4], true)) {
+            $semester = 1;
+        }
+
         return [
             'name' => trim((string) ($_POST['name'] ?? '')),
             'level_id' => (int) ($_POST['level_id'] ?? 0) ?: null,
-            'semester' => (int) ($_POST['semester'] ?? 1),
+            'semester' => $semester,
             'period_id' => (int) ($_POST['period_id'] ?? 0) ?: null,
         ];
     }

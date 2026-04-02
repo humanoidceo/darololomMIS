@@ -4,6 +4,11 @@ $behaviorJsonFlags = JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES;
 if (defined('JSON_INVALID_UTF8_SUBSTITUTE')) {
     $behaviorJsonFlags |= JSON_INVALID_UTF8_SUBSTITUTE;
 }
+$canOpenGradesModal = auth_role() === 'teacher' || can('manage_grades');
+$returnTo = '/students?level=' . urlencode((string) $level)
+    . '&q=' . urlencode((string) $q)
+    . '&page_size=' . (int) $pageSize
+    . '&page=' . (int) $page;
 ?>
 
 <div class="section-title">
@@ -83,6 +88,16 @@ if (defined('JSON_INVALID_UTF8_SUBSTITUTE')) {
                                 ثبت تخلف/امتیاز
                             </button>
                         <?php endif; ?>
+                        <?php if ($canOpenGradesModal): ?>
+                            <button
+                                type="button"
+                                class="btn btn-xs btn-warning js-student-grades-btn"
+                                data-student-id="<?= e((string) $student['id']) ?>"
+                                data-student-name="<?= e($student['name']) ?>"
+                            >
+                                نمرات
+                            </button>
+                        <?php endif; ?>
                         <a class="btn btn-xs btn-success" href="<?= e(url('/students/' . $student['id'] . '/results')) ?>">نتایج</a>
                         <?php if ($meritCount >= 3): ?>
                             <a class="btn btn-xs btn-primary" href="<?= e(url('/students/' . $student['id'] . '/appreciation')) ?>" target="_blank">تقدیرنامه</a>
@@ -113,6 +128,211 @@ if (defined('JSON_INVALID_UTF8_SUBSTITUTE')) {
         </div>
     </div>
 </div>
+
+<?php if ($canOpenGradesModal): ?>
+    <div
+        id="studentGradesModal"
+        class="behavior-modal-overlay"
+        hidden
+        data-fetch-template="<?= e(url('/grades/student/{id}/modal-data')) ?>"
+    >
+        <div class="behavior-modal-card grades-modal-card" role="dialog" aria-modal="true" aria-labelledby="studentGradesModalTitle">
+            <div class="behavior-modal-head">
+                <div>
+                    <h3 id="studentGradesModalTitle">ثبت نمرات</h3>
+                    <p class="behavior-modal-subtitle" id="studentGradesStudentName">—</p>
+                </div>
+                <button type="button" class="behavior-modal-close js-student-grades-close" aria-label="بستن">×</button>
+            </div>
+            <div class="behavior-modal-body">
+                <form method="post" action="<?= e(url('/grades/store')) ?>" id="studentGradesForm">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="student_id" id="studentGradesStudentId" value="">
+                    <input type="hidden" name="return_to" value="<?= e($returnTo) ?>">
+                    <div class="grades-modal-state js-grades-modal-message" hidden></div>
+
+                    <table class="table table-striped table-bordered grades-modal-table">
+                        <thead>
+                            <tr>
+                                <th>مضمون</th>
+                                <th>نمره (0-100)</th>
+                            </tr>
+                        </thead>
+                        <tbody class="js-grades-modal-body"></tbody>
+                    </table>
+
+                    <div class="form-actions grades-modal-actions">
+                        <button type="submit" class="section-btn btn btn-default js-grades-modal-submit">ذخیره نمرات</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        var modal = document.getElementById('studentGradesModal');
+        if (!modal) {
+            return;
+        }
+        modal.hidden = true;
+
+        var fetchTemplate = modal.getAttribute('data-fetch-template') || '';
+        var nameEl = document.getElementById('studentGradesStudentName');
+        var studentIdInput = document.getElementById('studentGradesStudentId');
+        var tableBody = modal.querySelector('.js-grades-modal-body');
+        var messageEl = modal.querySelector('.js-grades-modal-message');
+        var submitButton = modal.querySelector('.js-grades-modal-submit');
+        var openButtons = document.querySelectorAll('.js-student-grades-btn');
+        var closeButtons = modal.querySelectorAll('.js-student-grades-close');
+
+        function closeModal() {
+            modal.hidden = true;
+            document.body.classList.remove('behavior-modal-open');
+        }
+
+        function setMessage(text, type) {
+            messageEl.className = 'grades-modal-state js-grades-modal-message';
+            if (!text) {
+                messageEl.hidden = true;
+                messageEl.textContent = '';
+                return;
+            }
+
+            if (type) {
+                messageEl.classList.add(type);
+            }
+            messageEl.hidden = false;
+            messageEl.textContent = text;
+        }
+
+        function renderEmptyRow(message) {
+            tableBody.innerHTML = '';
+            var row = document.createElement('tr');
+            var cell = document.createElement('td');
+            cell.colSpan = 2;
+            cell.className = 'text-center grades-modal-empty-row';
+            cell.textContent = message;
+            row.appendChild(cell);
+            tableBody.appendChild(row);
+            submitButton.disabled = true;
+        }
+
+        function renderSubjects(subjects) {
+            tableBody.innerHTML = '';
+
+            if (!Array.isArray(subjects) || subjects.length === 0) {
+                renderEmptyRow('برای این شاگرد مضمون قابل ثبت موجود نیست.');
+                return;
+            }
+
+            var renderedCount = 0;
+            subjects.forEach(function (subject) {
+                var subjectId = Number(subject.id || 0);
+                if (!subjectId) {
+                    return;
+                }
+
+                var row = document.createElement('tr');
+
+                var nameCell = document.createElement('td');
+                nameCell.textContent = String(subject.name || '—');
+                row.appendChild(nameCell);
+
+                var inputCell = document.createElement('td');
+                var input = document.createElement('input');
+                input.type = 'number';
+                input.min = '0';
+                input.max = '100';
+                input.className = 'form-control';
+                input.name = 'scores[' + subjectId + ']';
+                input.value = subject.score === null || typeof subject.score === 'undefined' ? '' : String(subject.score);
+                inputCell.appendChild(input);
+                row.appendChild(inputCell);
+
+                tableBody.appendChild(row);
+                renderedCount += 1;
+            });
+
+            if (renderedCount === 0) {
+                renderEmptyRow('برای این شاگرد مضمون قابل ثبت موجود نیست.');
+                return;
+            }
+
+            submitButton.disabled = false;
+        }
+
+        function loadStudentSubjects(studentId) {
+            var endpoint = fetchTemplate.replace('{id}', String(studentId));
+            setMessage('در حال بارگذاری مضامین...', 'is-loading');
+            renderEmptyRow('در حال بارگذاری...');
+
+            return fetch(endpoint, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(function (response) {
+                    return response.json().then(function (data) {
+                        if (!response.ok || !data || data.ok !== true) {
+                            var message = (data && data.message) ? data.message : 'بارگذاری مضامین ناموفق بود.';
+                            throw new Error(message);
+                        }
+                        return data;
+                    });
+                })
+                .then(function (data) {
+                    setMessage('', '');
+                    renderSubjects(data.subjects || []);
+                })
+                .catch(function (error) {
+                    setMessage(error.message || 'بارگذاری مضامین ناموفق بود.', 'is-error');
+                    renderEmptyRow('امکان نمایش مضامین وجود ندارد.');
+                });
+        }
+
+        function openModal(button) {
+            var studentId = button.getAttribute('data-student-id') || '';
+            var studentName = button.getAttribute('data-student-name') || '—';
+
+            nameEl.textContent = 'دانش‌آموز: ' + studentName;
+            studentIdInput.value = studentId;
+            modal.hidden = false;
+            document.body.classList.add('behavior-modal-open');
+
+            if (!studentId) {
+                setMessage('شناسه دانش‌آموز نامعتبر است.', 'is-error');
+                renderEmptyRow('امکان نمایش مضامین وجود ندارد.');
+                return;
+            }
+
+            loadStudentSubjects(studentId);
+        }
+
+        openButtons.forEach(function (button) {
+            button.addEventListener('click', function () {
+                openModal(button);
+            });
+        });
+
+        closeButtons.forEach(function (button) {
+            button.addEventListener('click', closeModal);
+        });
+
+        modal.addEventListener('click', function (event) {
+            if (event.target === modal) {
+                closeModal();
+            }
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && !modal.hidden) {
+                closeModal();
+            }
+        });
+    })();
+    </script>
+<?php endif; ?>
 
 <?php if (can('manage_students')): ?>
     <div

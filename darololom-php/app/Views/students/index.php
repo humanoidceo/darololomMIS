@@ -67,7 +67,7 @@ $returnTo = '/students?level=' . urlencode((string) $level)
                     <td><?= e($student['class_name'] ?: '—') ?></td>
                     <td>
                         <?php if (!empty($student['semesters_display'])): ?>
-                            سمستر: <?= e($student['semesters_display']) ?>
+                             <?= e($student['semesters_display']) ?>
                         <?php elseif (!empty($student['periods_display'])): ?>
                             دوره: <?= e($student['periods_display']) ?>
                         <?php else: ?>

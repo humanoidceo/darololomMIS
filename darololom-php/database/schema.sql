@@ -287,6 +287,7 @@ CREATE TABLE IF NOT EXISTS students (
     permanent_address TEXT NULL,
     school_class_id INT UNSIGNED NULL,
     mobile_number VARCHAR(20) NULL,
+    enrollment_year SMALLINT UNSIGNED NULL,
     image_path VARCHAR(255) NULL,
     certificate_file VARCHAR(255) NULL,
     level_id INT UNSIGNED NULL,
@@ -313,6 +314,22 @@ SET @add_students_current_street_sql := IF(
 PREPARE add_students_current_street_stmt FROM @add_students_current_street_sql;
 EXECUTE add_students_current_street_stmt;
 DEALLOCATE PREPARE add_students_current_street_stmt;
+
+SET @has_students_enrollment_year := (
+    SELECT COUNT(*)
+    FROM information_schema.columns
+    WHERE table_schema = DATABASE()
+      AND table_name = 'students'
+      AND column_name = 'enrollment_year'
+);
+SET @add_students_enrollment_year_sql := IF(
+    @has_students_enrollment_year = 0,
+    'ALTER TABLE students ADD COLUMN enrollment_year SMALLINT UNSIGNED NULL AFTER mobile_number',
+    'SELECT 1'
+);
+PREPARE add_students_enrollment_year_stmt FROM @add_students_enrollment_year_sql;
+EXECUTE add_students_enrollment_year_stmt;
+DEALLOCATE PREPARE add_students_enrollment_year_stmt;
 
 SET @has_fk_users_student := (
     SELECT COUNT(*)

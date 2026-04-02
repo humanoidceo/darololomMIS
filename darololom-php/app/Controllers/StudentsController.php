@@ -151,12 +151,12 @@ final class StudentsController extends Controller
         $stmt = $db->prepare('INSERT INTO students (
             name, father_name, grandfather_name, birth_date, id_number, exam_number,
             gender, current_address, village, district, area, current_street, time_start, time_end,
-            permanent_address, school_class_id, mobile_number, image_path, certificate_file,
+            permanent_address, school_class_id, mobile_number, enrollment_year, image_path, certificate_file,
             level_id, created_at
         ) VALUES (
             :name, :father_name, :grandfather_name, :birth_date, :id_number, :exam_number,
             :gender, :current_address, :village, :district, :area, :current_street, :time_start, :time_end,
-            :permanent_address, :school_class_id, :mobile_number, :image_path, :certificate_file,
+            :permanent_address, :school_class_id, :mobile_number, :enrollment_year, :image_path, :certificate_file,
             :level_id, NOW()
         )');
 
@@ -272,6 +272,7 @@ final class StudentsController extends Controller
             permanent_address = :permanent_address,
             school_class_id = :school_class_id,
             mobile_number = :mobile_number,
+            enrollment_year = :enrollment_year,
             image_path = :image_path,
             certificate_file = :certificate_file,
             level_id = :level_id,
@@ -684,6 +685,7 @@ final class StudentsController extends Controller
             'permanent_address' => trim((string) ($_POST['permanent_address'] ?? '')),
             'school_class_id' => (int) ($_POST['school_class_id'] ?? 0) ?: null,
             'mobile_number' => trim((string) ($_POST['mobile_number'] ?? '')),
+            'enrollment_year' => (int) ($_POST['enrollment_year'] ?? 0) ?: null,
             'image_path' => $imagePath,
             'certificate_file' => $certificatePath,
             'level_id' => (int) ($_POST['level_id'] ?? 0) ?: null,
@@ -771,6 +773,7 @@ final class StudentsController extends Controller
         $schoolClassId = (int) ($_POST['school_class_id'] ?? 0);
         $semesterId = (int) ($_POST['semester_id'] ?? 0);
         $periodId = (int) ($_POST['period_id'] ?? 0);
+        $enrollmentYear = (int) ($_POST['enrollment_year'] ?? 0);
         $accountEmail = mb_strtolower(trim((string) ($_POST['account_email'] ?? '')));
         $accountPassword = (string) ($_POST['account_password'] ?? '');
         $accountPasswordConfirmation = (string) ($_POST['account_password_confirmation'] ?? '');
@@ -813,6 +816,9 @@ final class StudentsController extends Controller
         }
         if ($currentStreet === '' || mb_strlen($currentStreet) > 150) {
             return ['valid' => false, 'error' => 'کوچه سکونت فعلی را درست وارد کنید.', 'semester_ids' => [], 'period_ids' => []];
+        }
+        if ($enrollmentYear < 1350 || $enrollmentYear > 1500) {
+            return ['valid' => false, 'error' => 'سال شمولیت باید بین ۱۳۵۰ تا ۱۵۰۰ باشد.', 'semester_ids' => [], 'period_ids' => []];
         }
 
         if ($timeStart !== '' && !$this->isValidTime($timeStart)) {

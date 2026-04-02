@@ -26,6 +26,13 @@ foreach ($classes as $class) {
         break;
     }
 }
+$selectedEnrollmentYear = (int) $oldOr('enrollment_year', 0);
+if ($selectedEnrollmentYear < 1350 || $selectedEnrollmentYear > 1500) {
+    $selectedEnrollmentYear = 0;
+}
+$selectedEnrollmentYearLabel = $selectedEnrollmentYear > 0
+    ? to_persian_number((string) $selectedEnrollmentYear)
+    : 'انتخاب سال شمولیت';
 
 $classCatalog = [];
 foreach ($classes as $class) {
@@ -168,6 +175,23 @@ $isEditMode = !empty($studentData['id']);
                     <small class="field-help">فقط همان صنفی که جستجو و انتخاب می‌کنید ثبت می‌شود.</small>
                 </div>
 
+                <div class="form-group">
+                    <label>سال شمولیت</label>
+                    <input type="hidden" name="enrollment_year" id="enrollment_year" value="<?= e($selectedEnrollmentYear > 0 ? (string) $selectedEnrollmentYear : '') ?>">
+                    <div class="student-year-combo" id="studentEnrollmentYearCombo">
+                        <button type="button" class="form-control student-year-trigger" id="studentEnrollmentYearTrigger" aria-haspopup="listbox" aria-expanded="false">
+                            <span id="studentEnrollmentYearTriggerText"><?= e($selectedEnrollmentYearLabel) ?></span>
+                            <span class="student-year-arrow" aria-hidden="true">▾</span>
+                        </button>
+                        <div class="student-year-dropdown" id="studentEnrollmentYearDropdown" hidden>
+                            <input type="text" id="studentEnrollmentYearSearch" class="form-control" placeholder="جستجوی سال..." autocomplete="off">
+                            <div class="student-year-list" id="studentEnrollmentYearList" role="listbox"></div>
+                            <div class="student-year-status" id="studentEnrollmentYearStatus"></div>
+                        </div>
+                    </div>
+                    <small class="field-help">از سال ۱۳۵۰ تا ۱۵۰۰ قابل انتخاب است.</small>
+                </div>
+
                 <div class="form-group" id="exam_number_block">
                     <label>نمبر امتحان کانکور</label>
                     <input class="form-control" type="text" name="exam_number" id="exam_number" value="<?= e((string) $oldOr('exam_number')) ?>" placeholder="مثال: KANKOR-2026-145" pattern="[0-9A-Za-z\-\/\s]*" maxlength="100">
@@ -303,6 +327,14 @@ $isEditMode = !empty($studentData['id']);
     const schoolClassSearch = document.getElementById('school_class_search');
     const schoolClassIdInput = document.getElementById('school_class_id');
     const schoolClassList = document.getElementById('school_classes_list');
+    const enrollmentYearInput = document.getElementById('enrollment_year');
+    const enrollmentYearCombo = document.getElementById('studentEnrollmentYearCombo');
+    const enrollmentYearTrigger = document.getElementById('studentEnrollmentYearTrigger');
+    const enrollmentYearTriggerText = document.getElementById('studentEnrollmentYearTriggerText');
+    const enrollmentYearDropdown = document.getElementById('studentEnrollmentYearDropdown');
+    const enrollmentYearSearch = document.getElementById('studentEnrollmentYearSearch');
+    const enrollmentYearList = document.getElementById('studentEnrollmentYearList');
+    const enrollmentYearStatus = document.getElementById('studentEnrollmentYearStatus');
 
     const examBlock = document.getElementById('exam_number_block');
     const examInput = document.getElementById('exam_number');
@@ -329,6 +361,133 @@ $isEditMode = !empty($studentData['id']);
     const classesData = <?= json_encode($classCatalog, JSON_UNESCAPED_UNICODE) ?>;
 
     let currentStep = 0;
+    const allEnrollmentYears = [];
+    for (let year = 1500; year >= 1350; year -= 1) {
+        allEnrollmentYears.push(year);
+    }
+    const enrollmentYearState = {
+        opened: false,
+        loading: false,
+        page: 1,
+        perPage: 5,
+        hasMore: true,
+        query: '',
+        debounceTimer: null
+    };
+
+    function toPersianDigits(value) {
+        const en = '0123456789';
+        const fa = '۰۱۲۳۴۵۶۷۸۹';
+        return String(value || '').replace(/\d/g, (digit) => fa[en.indexOf(digit)] || digit);
+    }
+
+    function normalizeDigits(value) {
+        const map = {
+            '۰': '0', '۱': '1', '۲': '2', '۳': '3', '۴': '4',
+            '۵': '5', '۶': '6', '۷': '7', '۸': '8', '۹': '9',
+            '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4',
+            '٥': '5', '٦': '6', '٧': '7', '٨': '8', '٩': '9'
+        };
+        return String(value || '').replace(/[۰-۹٠-٩]/g, (char) => map[char] || char);
+    }
+
+    function selectedEnrollmentYear() {
+        return parseInt((enrollmentYearInput && enrollmentYearInput.value) || '0', 10) || 0;
+    }
+
+    function setEnrollmentYearStatus(message) {
+        if (enrollmentYearStatus) {
+            enrollmentYearStatus.textContent = message;
+        }
+    }
+
+    function updateEnrollmentYearTriggerText() {
+        if (!enrollmentYearTriggerText) return;
+        const year = selectedEnrollmentYear();
+        enrollmentYearTriggerText.textContent = year > 0 ? toPersianDigits(year) : 'انتخاب سال شمولیت';
+    }
+
+    function filteredEnrollmentYears() {
+        if (!enrollmentYearState.query) {
+            return allEnrollmentYears.slice();
+        }
+        return allEnrollmentYears.filter((year) => String(year).includes(enrollmentYearState.query));
+    }
+
+    function buildEnrollmentYearOption(year) {
+        const option = document.createElement('button');
+        option.type = 'button';
+        option.className = 'student-year-option';
+        option.setAttribute('role', 'option');
+        option.setAttribute('data-year', String(year));
+        option.textContent = toPersianDigits(year);
+
+        if (year === selectedEnrollmentYear()) {
+            option.classList.add('is-selected');
+        }
+
+        option.addEventListener('click', () => {
+            if (enrollmentYearInput) {
+                enrollmentYearInput.value = String(year);
+            }
+            updateEnrollmentYearTriggerText();
+            setEnrollmentYearOpened(false);
+        });
+
+        return option;
+    }
+
+    function renderEnrollmentYearPage(reset) {
+        if (!enrollmentYearList) return;
+        if (reset) {
+            enrollmentYearList.innerHTML = '';
+            enrollmentYearState.page = 1;
+        }
+
+        const filtered = filteredEnrollmentYears();
+        const start = (enrollmentYearState.page - 1) * enrollmentYearState.perPage;
+        const end = start + enrollmentYearState.perPage;
+        const chunk = filtered.slice(start, end);
+
+        if (reset && chunk.length === 0) {
+            setEnrollmentYearStatus('سال مورد نظر پیدا نشد.');
+            enrollmentYearState.hasMore = false;
+            return;
+        }
+
+        const fragment = document.createDocumentFragment();
+        chunk.forEach((year) => fragment.appendChild(buildEnrollmentYearOption(year)));
+        enrollmentYearList.appendChild(fragment);
+
+        enrollmentYearState.hasMore = end < filtered.length;
+        if (enrollmentYearState.hasMore) {
+            setEnrollmentYearStatus('برای مشاهده موارد بیشتر اسکرول کنید.');
+        } else {
+            setEnrollmentYearStatus('پایان لیست.');
+        }
+    }
+
+    function loadMoreEnrollmentYears() {
+        if (enrollmentYearState.loading || !enrollmentYearState.hasMore) return;
+        enrollmentYearState.loading = true;
+        enrollmentYearState.page += 1;
+        renderEnrollmentYearPage(false);
+        enrollmentYearState.loading = false;
+    }
+
+    function setEnrollmentYearOpened(opened) {
+        enrollmentYearState.opened = opened;
+        if (enrollmentYearDropdown) {
+            enrollmentYearDropdown.hidden = !opened;
+        }
+        if (enrollmentYearTrigger) {
+            enrollmentYearTrigger.setAttribute('aria-expanded', opened ? 'true' : 'false');
+        }
+        if (opened) {
+            renderEnrollmentYearPage(true);
+            if (enrollmentYearSearch) enrollmentYearSearch.focus();
+        }
+    }
 
     function selectedLevelCode() {
         const opt = levelSelect ? levelSelect.options[levelSelect.selectedIndex] : null;
@@ -584,6 +743,13 @@ $isEditMode = !empty($studentData['id']);
                 showStep(1);
                 return false;
             }
+            const selectedYear = selectedEnrollmentYear();
+            if (selectedYear < 1350 || selectedYear > 1500) {
+                alert('سال شمولیت را بین ۱۳۵۰ تا ۱۵۰۰ انتخاب کنید.');
+                showStep(1);
+                if (enrollmentYearTrigger) enrollmentYearTrigger.focus();
+                return false;
+            }
 
             if (schoolClassSearch && schoolClassSearch.value.trim() !== '' && schoolClassIdInput && !schoolClassIdInput.value) {
                 alert('صنف واردشده معتبر نیست. لطفاً از لیست جستجو انتخاب کنید.');
@@ -736,14 +902,55 @@ $isEditMode = !empty($studentData['id']);
         schoolClassSearch.addEventListener('change', syncClassFromText);
         schoolClassSearch.addEventListener('blur', syncClassFromText);
     }
+    if (enrollmentYearTrigger) {
+        enrollmentYearTrigger.addEventListener('click', () => {
+            setEnrollmentYearOpened(!enrollmentYearState.opened);
+        });
+    }
+    if (enrollmentYearSearch) {
+        enrollmentYearSearch.addEventListener('input', () => {
+            const nextQuery = normalizeDigits((enrollmentYearSearch.value || '').trim());
+            if (enrollmentYearState.debounceTimer) {
+                clearTimeout(enrollmentYearState.debounceTimer);
+            }
+            enrollmentYearState.debounceTimer = setTimeout(() => {
+                enrollmentYearState.query = nextQuery;
+                renderEnrollmentYearPage(true);
+            }, 220);
+        });
+    }
+    if (enrollmentYearList) {
+        enrollmentYearList.addEventListener('scroll', () => {
+            if (!enrollmentYearState.opened || enrollmentYearState.loading || !enrollmentYearState.hasMore) return;
+            const threshold = 30;
+            const remaining = enrollmentYearList.scrollHeight - enrollmentYearList.scrollTop - enrollmentYearList.clientHeight;
+            if (remaining <= threshold) {
+                loadMoreEnrollmentYears();
+            }
+        });
+    }
 
     if (birthDateDay) birthDateDay.addEventListener('change', syncBirthHidden);
     if (birthDateMonth) birthDateMonth.addEventListener('change', syncBirthHidden);
     if (birthDateYear) birthDateYear.addEventListener('change', syncBirthHidden);
 
+    document.addEventListener('click', (event) => {
+        if (!enrollmentYearState.opened || !enrollmentYearCombo) return;
+        if (!enrollmentYearCombo.contains(event.target)) {
+            setEnrollmentYearOpened(false);
+        }
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && enrollmentYearState.opened) {
+            setEnrollmentYearOpened(false);
+        }
+    });
+
     setBirthFromExisting();
     syncBirthHidden();
     syncClassFromHiddenId();
+    updateEnrollmentYearTriggerText();
     updateConditionalBlocks();
     showStep(0);
 })();

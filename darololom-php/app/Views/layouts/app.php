@@ -89,9 +89,6 @@ $isTeacherRole = $currentRole === 'teacher';
                             <?php if (can('manage_subjects')): ?>
                                 <li><a href="<?= e(url('/subjects')) ?>">مضامین</a></li>
                             <?php endif; ?>
-                            <?php if (can('manage_grades')): ?>
-                                <li><a href="<?= e(url('/grades')) ?>">نمرات</a></li>
-                            <?php endif; ?>
                             <?php if (can('manage_users')): ?>
                                 <li><a href="<?= e(url('/users')) ?>">مدیریت کاربران</a></li>
                             <?php endif; ?>
@@ -144,7 +141,6 @@ $isTeacherRole = $currentRole === 'teacher';
                             <?php else: ?>
                                 <li><a href="<?= e(url('/students')) ?>">مدیریت دانش‌آموزان</a></li>
                                 <li><a href="<?= e(url('/teachers')) ?>">مدیریت استادان</a></li>
-                                <li><a href="<?= e(url('/grades')) ?>">ثبت و مدیریت نمرات</a></li>
                             <?php endif; ?>
                         </ul>
                         <p class="footer-copy">© <?= date('Y') ?> دارالعلوم عالی الحاج سید منصور نادری - همه حقوق محفوظ است.</p>

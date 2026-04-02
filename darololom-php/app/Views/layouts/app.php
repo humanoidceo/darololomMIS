@@ -72,6 +72,7 @@ $isTeacherRole = $currentRole === 'teacher';
                     <?php if ($isLoggedIn): ?>
                         <?php if ($isStudentRole): ?>
                             <li><a href="<?= e(url('/account')) ?>">حساب من</a></li>
+                            <li><a href="<?= e(url('/account?tab=grades')) ?>">نمرات</a></li>
                         <?php elseif ($isTeacherRole): ?>
                             <li><a href="<?= e(url('/account')) ?>">حساب من</a></li>
                             <li><a href="<?= e(url('/grades')) ?>">نمرات صنوف من</a></li>
@@ -135,6 +136,7 @@ $isTeacherRole = $currentRole === 'teacher';
                         <ul class="footer-links">
                             <?php if ($isStudentRole): ?>
                                 <li><a href="<?= e(url('/account')) ?>">مشاهده مشخصات من</a></li>
+                                <li><a href="<?= e(url('/account?tab=grades')) ?>">مشاهده نمرات من</a></li>
                             <?php elseif ($isTeacherRole): ?>
                                 <li><a href="<?= e(url('/account')) ?>">مشاهده مشخصات من</a></li>
                                 <li><a href="<?= e(url('/grades')) ?>">ثبت نمرات صنوف من</a></li>

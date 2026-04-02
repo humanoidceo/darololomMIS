@@ -249,6 +249,28 @@ body.rtl-body .table > tfoot > tr > td {
     text-align: right;
 }
 
+.student-grade-sheet {
+    table-layout: fixed;
+    border-collapse: collapse;
+}
+
+.student-grade-sheet th,
+.student-grade-sheet td {
+    border: 1px solid #d5dde6 !important;
+    background: #ffffff;
+}
+
+.student-grade-sheet .grade-empty {
+    background: #ffffff;
+    color: transparent;
+}
+
+.student-grade-sheet .grade-term-row td {
+    background: #f3f6fa;
+    font-weight: 700;
+    text-align: center !important;
+}
+
 body.rtl-body .pagination {
     padding-right: 0;
 }

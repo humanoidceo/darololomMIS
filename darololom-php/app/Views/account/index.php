@@ -2,6 +2,10 @@
 $current = auth_user();
 $emailValue = (string) old('email', (string) ($current['email'] ?? ''));
 $educationMap = ['p' => 'چهارده پاس', 'b' => 'لیسانس', 'm' => 'ماستر', 'd' => 'دوکتور'];
+$activeTab = (string) ($activeTab ?? 'profile');
+if (!in_array($activeTab, ['profile', 'grades'], true)) {
+    $activeTab = 'profile';
+}
 ?>
 
 <div class="section-title">
@@ -13,6 +17,12 @@ $educationMap = ['p' => 'چهارده پاس', 'b' => 'لیسانس', 'm' => 'م
         <div class="news-thumb">
             <div class="news-info">
                 <?php if ($role === 'student' && $student): ?>
+                    <div class="student-account-tabs" style="margin-bottom: 14px;">
+                        <a class="btn btn-sm <?= $activeTab === 'profile' ? 'btn-default' : 'btn-link' ?>" href="<?= e(url('/account?tab=profile')) ?>">پروفایل</a>
+                        <a class="btn btn-sm <?= $activeTab === 'grades' ? 'btn-default' : 'btn-link' ?>" href="<?= e(url('/account?tab=grades')) ?>">نمرات</a>
+                    </div>
+
+                    <?php if ($activeTab === 'profile'): ?>
                     <h3><?= e((string) $student['name']) ?></h3>
                     <p><strong>نام پدر:</strong> <?= e((string) ($student['father_name'] ?? '—')) ?></p>
                     <p><strong>سطح آموزشی:</strong> <?= e((string) ($student['level_name'] ?? '—')) ?></p>
@@ -20,30 +30,84 @@ $educationMap = ['p' => 'چهارده پاس', 'b' => 'لیسانس', 'm' => 'م
                     <p><strong>شماره تماس:</strong> <?= e((string) ($student['mobile_number'] ?? '—')) ?></p>
                     <p><strong>سکونت فعلی:</strong> <?= e('ولایت: ' . (string) ($student['current_address'] ?? '—') . ' | ناحیه: ' . (string) ($student['area'] ?? '—') . ' | کوچه: ' . (string) ($student['current_street'] ?? '—')) ?></p>
                     <p><strong>سکونت اصلی:</strong> <?= e('ولایت: ' . (string) ($student['permanent_address'] ?? '—') . ' | ولسوالی: ' . (string) ($student['district'] ?? '—') . ' | قریه: ' . (string) ($student['village'] ?? '—')) ?></p>
+                    <?php endif; ?>
 
+                    <?php if ($activeTab === 'grades'): ?>
                     <hr>
-                    <h4>نتایج نمرات</h4>
-                    <?php if ($studentScores === []): ?>
-                        <p class="field-help">هنوز نمره‌ای برای شما ثبت نشده است.</p>
+                    <h4>نمرات</h4>
+                    <?php if (($studentGradeRows ?? []) === []): ?>
+                        <p class="field-help">برای شما هنوز مضمون/نمره‌ای ثبت نشده است.</p>
                     <?php else: ?>
-                        <table class="table table-bordered table-striped">
+                        <table class="table table-bordered student-grade-sheet">
                             <thead>
                                 <tr>
                                     <th>مضمون</th>
                                     <th>نمره</th>
-                                    <th>آخرین بروزرسانی</th>
+                                    <th>مضمون</th>
+                                    <th>نمره</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($studentScores as $row): ?>
-                                    <tr>
-                                        <td><?= e((string) $row['subject_name']) ?></td>
-                                        <td><?= e((string) $row['score']) ?></td>
-                                        <td><?= e((string) $row['updated_at']) ?></td>
+                                <?php
+                                $gradeRows = array_values((array) ($studentGradeRows ?? []));
+                                $groupedRows = [];
+                                foreach ($gradeRows as $gradeRow) {
+                                    $termLabel = (string) ($gradeRow['term_label'] ?? '—');
+                                    if (!isset($groupedRows[$termLabel])) {
+                                        $groupedRows[$termLabel] = [];
+                                    }
+                                    $groupedRows[$termLabel][] = $gradeRow;
+                                }
+                                if (($student['level_code'] ?? '') === 'aali') {
+                                    foreach ([1, 2, 3, 4] as $semesterNumber) {
+                                        $termLabel = 'سمستر ' . (string) $semesterNumber;
+                                        if (!isset($groupedRows[$termLabel])) {
+                                            $groupedRows[$termLabel] = [[
+                                                'term_label' => $termLabel,
+                                                'subject_name' => '',
+                                                'score' => null,
+                                            ]];
+                                        }
+                                    }
+                                    uksort($groupedRows, static function (string $a, string $b): int {
+                                        $aNum = (int) preg_replace('/[^0-9]/', '', $a);
+                                        $bNum = (int) preg_replace('/[^0-9]/', '', $b);
+                                        return $aNum <=> $bNum;
+                                    });
+                                }
+                                $termLabels = array_keys($groupedRows);
+                                $termPairs = array_chunk($termLabels, 2);
+                                ?>
+                                <?php foreach ($termPairs as $pair): ?>
+                                    <?php
+                                    $leftTerm = (string) ($pair[0] ?? '—');
+                                    $rightTerm = isset($pair[1]) ? (string) $pair[1] : null;
+                                    $leftRows = $groupedRows[$leftTerm] ?? [];
+                                    $rightRows = $rightTerm !== null ? ($groupedRows[$rightTerm] ?? []) : [];
+                                    $maxRows = max(count($leftRows), count($rightRows));
+                                    ?>
+                                    <tr class="grade-term-row">
+                                        <td colspan="2"><strong><?= e($leftTerm) ?></strong></td>
+                                        <td colspan="2"><strong><?= e((string) ($rightTerm ?? '')) ?></strong></td>
                                     </tr>
+                                    <?php for ($i = 0; $i < $maxRows; $i++): ?>
+                                        <?php
+                                        $leftRow = $leftRows[$i] ?? null;
+                                        $rightRow = $rightRows[$i] ?? null;
+                                        $leftScore = is_array($leftRow) ? ($leftRow['score'] ?? null) : null;
+                                        $rightScore = is_array($rightRow) ? ($rightRow['score'] ?? null) : null;
+                                        ?>
+                                        <tr>
+                                            <td class="<?= $leftRow === null ? 'grade-empty' : '' ?>"><?= $leftRow === null ? '' : e((string) ($leftRow['subject_name'] ?? '')) ?></td>
+                                            <td class="<?= $leftScore === null ? 'grade-empty' : '' ?>"><?= $leftScore === null ? '' : e((string) $leftScore) ?></td>
+                                            <td class="<?= $rightRow === null ? 'grade-empty' : '' ?>"><?= $rightRow === null ? '' : e((string) ($rightRow['subject_name'] ?? '')) ?></td>
+                                            <td class="<?= $rightScore === null ? 'grade-empty' : '' ?>"><?= $rightScore === null ? '' : e((string) $rightScore) ?></td>
+                                        </tr>
+                                    <?php endfor; ?>
                                 <?php endforeach; ?>
                             </tbody>
                         </table>
+                    <?php endif; ?>
                     <?php endif; ?>
                 <?php endif; ?>
 

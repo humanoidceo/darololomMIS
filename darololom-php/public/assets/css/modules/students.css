@@ -98,6 +98,40 @@
     direction: rtl;
 }
 
+.student-list-filter {
+    align-items: flex-start;
+}
+
+.student-level-tabs {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid #d9e6b5;
+    border-radius: 10px;
+    background: #f7faee;
+    padding: 5px;
+}
+
+.student-level-chip {
+    border: none;
+    background: transparent;
+    color: #5d6f33;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.student-level-chip.is-active {
+    background: #a5c422;
+    color: #ffffff;
+}
+
+.student-list-year-combo {
+    min-width: 200px;
+}
+
 .student-year-combo {
     position: relative;
 }
@@ -179,5 +213,14 @@
 
     .jalali-date-grid {
         grid-template-columns: 1fr;
+    }
+
+    .student-level-tabs {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .student-list-year-combo {
+        width: 100%;
     }
 }

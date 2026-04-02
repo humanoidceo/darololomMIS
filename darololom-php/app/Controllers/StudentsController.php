@@ -18,7 +18,15 @@ final class StudentsController extends Controller
 
         $q = trim((string) ($_GET['q'] ?? ''));
         $level = trim((string) ($_GET['level'] ?? 'aali'));
+        $year = (int) ($_GET['year'] ?? 0);
         $page = max(1, (int) ($_GET['page'] ?? 1));
+
+        if (!in_array($level, ['aali', 'moteseta', 'ebtedai'], true)) {
+            $level = 'aali';
+        }
+        if ($year < 1350 || $year > 1500) {
+            $year = 0;
+        }
 
         $allowedSizes = paginated_sizes();
         $pageSize = (int) ($_GET['page_size'] ?? config('pagination.default_page_size', 20));
@@ -34,9 +42,11 @@ final class StudentsController extends Controller
             $bind['q'] = '%' . $q . '%';
         }
 
-        if (in_array($level, ['aali', 'moteseta', 'ebtedai'], true)) {
-            $filters[] = 'lvl.code = :level_code';
-            $bind['level_code'] = $level;
+        $filters[] = 'lvl.code = :level_code';
+        $bind['level_code'] = $level;
+        if ($year > 0) {
+            $filters[] = 's.enrollment_year = :enrollment_year';
+            $bind['enrollment_year'] = $year;
         }
 
         $where = $filters ? 'WHERE ' . implode(' AND ', $filters) : '';
@@ -102,6 +112,7 @@ final class StudentsController extends Controller
             'pageSize' => $pageSize,
             'q' => $q,
             'level' => $level,
+            'year' => $year,
             'allowedSizes' => $allowedSizes,
         ]);
     }
@@ -821,13 +832,16 @@ final class StudentsController extends Controller
             return ['valid' => false, 'error' => 'سال شمولیت باید بین ۱۳۵۰ تا ۱۵۰۰ باشد.', 'semester_ids' => [], 'period_ids' => []];
         }
 
-        if ($timeStart !== '' && !$this->isValidTime($timeStart)) {
+        $timeStartSeconds = $timeStart !== '' ? $this->timeToSeconds($timeStart) : null;
+        $timeEndSeconds = $timeEnd !== '' ? $this->timeToSeconds($timeEnd) : null;
+
+        if ($timeStart !== '' && $timeStartSeconds === null) {
             return ['valid' => false, 'error' => 'تایم آغاز معتبر نیست.', 'semester_ids' => [], 'period_ids' => []];
         }
-        if ($timeEnd !== '' && !$this->isValidTime($timeEnd)) {
+        if ($timeEnd !== '' && $timeEndSeconds === null) {
             return ['valid' => false, 'error' => 'تایم ختم معتبر نیست.', 'semester_ids' => [], 'period_ids' => []];
         }
-        if ($timeStart !== '' && $timeEnd !== '' && strcmp($timeStart, $timeEnd) >= 0) {
+        if ($timeStartSeconds !== null && $timeEndSeconds !== null && $timeStartSeconds >= $timeEndSeconds) {
             return ['valid' => false, 'error' => 'تایم ختم باید بعد از تایم آغاز باشد.', 'semester_ids' => [], 'period_ids' => []];
         }
 
@@ -988,7 +1002,24 @@ final class StudentsController extends Controller
 
     private function isValidTime(string $time): bool
     {
-        return (bool) preg_match('/^\d{2}:\d{2}$/', $time);
+        return $this->timeToSeconds($time) !== null;
+    }
+
+    private function timeToSeconds(string $time): ?int
+    {
+        if (!preg_match('/^(\d{2}):(\d{2})(?::(\d{2}))?$/', $time, $matches)) {
+            return null;
+        }
+
+        $hour = (int) ($matches[1] ?? 0);
+        $minute = (int) ($matches[2] ?? 0);
+        $second = isset($matches[3]) ? (int) $matches[3] : 0;
+
+        if ($hour < 0 || $hour > 23 || $minute < 0 || $minute > 59 || $second < 0 || $second > 59) {
+            return null;
+        }
+
+        return ($hour * 3600) + ($minute * 60) + $second;
     }
 
     private function isFileUploaded(string $field): bool

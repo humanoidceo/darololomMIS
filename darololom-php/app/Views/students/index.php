@@ -5,7 +5,13 @@ if (defined('JSON_INVALID_UTF8_SUBSTITUTE')) {
     $behaviorJsonFlags |= JSON_INVALID_UTF8_SUBSTITUTE;
 }
 $canOpenGradesModal = auth_role() === 'teacher' || can('manage_grades');
+$selectedYear = (int) ($year ?? 0);
+if ($selectedYear < 1350 || $selectedYear > 1500) {
+    $selectedYear = 0;
+}
+$selectedYearLabel = $selectedYear > 0 ? to_persian_number((string) $selectedYear) : 'انتخاب سال شمولیت';
 $returnTo = '/students?level=' . urlencode((string) $level)
+    . '&year=' . urlencode($selectedYear > 0 ? (string) $selectedYear : '')
     . '&q=' . urlencode((string) $q)
     . '&page_size=' . (int) $pageSize
     . '&page=' . (int) $page;
@@ -16,13 +22,29 @@ $returnTo = '/students?level=' . urlencode((string) $level)
 </div>
 
 <div class="toolbar-row">
-    <form method="get" class="filter-form form-inline">
+    <form method="get" class="filter-form form-inline student-list-filter" id="studentListFilterForm">
+        <input type="hidden" name="level" id="student_filter_level" value="<?= e((string) $level) ?>">
+        <input type="hidden" name="year" id="student_filter_year" value="<?= e($selectedYear > 0 ? (string) $selectedYear : '') ?>">
+
+        <div class="student-level-tabs" id="studentLevelTabs">
+            <button type="button" class="student-level-chip js-student-level-chip<?= $level === 'aali' ? ' is-active' : '' ?>" data-level="aali">عالی</button>
+            <button type="button" class="student-level-chip js-student-level-chip<?= $level === 'moteseta' ? ' is-active' : '' ?>" data-level="moteseta">متوسطه</button>
+            <button type="button" class="student-level-chip js-student-level-chip<?= $level === 'ebtedai' ? ' is-active' : '' ?>" data-level="ebtedai">ابتداییه</button>
+        </div>
+
+        <div class="student-year-combo student-list-year-combo" id="studentFilterYearCombo">
+            <button type="button" class="form-control student-year-trigger" id="studentFilterYearTrigger" aria-haspopup="listbox" aria-expanded="false">
+                <span id="studentFilterYearTriggerText"><?= e($selectedYearLabel) ?></span>
+                <span class="student-year-arrow" aria-hidden="true">▾</span>
+            </button>
+            <div class="student-year-dropdown" id="studentFilterYearDropdown" hidden>
+                <input type="text" id="studentFilterYearSearch" class="form-control" placeholder="جستجوی سال..." autocomplete="off">
+                <div class="student-year-list" id="studentFilterYearList" role="listbox"></div>
+                <div class="student-year-status" id="studentFilterYearStatus"></div>
+            </div>
+        </div>
+
         <input class="form-control" type="text" name="q" value="<?= e($q) ?>" placeholder="جستجو نام، پدر، موبایل یا تذکره...">
-        <select name="level" class="form-control">
-            <option value="aali" <?= $level === 'aali' ? 'selected' : '' ?>>عالی</option>
-            <option value="moteseta" <?= $level === 'moteseta' ? 'selected' : '' ?>>متوسطه</option>
-            <option value="ebtedai" <?= $level === 'ebtedai' ? 'selected' : '' ?>>ابتداییه</option>
-        </select>
         <select name="page_size" class="form-control">
             <?php foreach ($allowedSizes as $size): ?>
                 <option value="<?= e((string) $size) ?>" <?= (int) $pageSize === (int) $size ? 'selected' : '' ?>><?= e((string) $size) ?></option>
@@ -36,6 +58,277 @@ $returnTo = '/students?level=' . urlencode((string) $level)
     <?php endif; ?>
 </div>
 
+<script>
+(function () {
+    var form = document.getElementById('studentListFilterForm');
+    if (!form) {
+        return;
+    }
+
+    var levelInput = document.getElementById('student_filter_level');
+    var yearInput = document.getElementById('student_filter_year');
+    var levelButtons = form.querySelectorAll('.js-student-level-chip');
+    var yearCombo = document.getElementById('studentFilterYearCombo');
+    var yearTrigger = document.getElementById('studentFilterYearTrigger');
+    var yearTriggerText = document.getElementById('studentFilterYearTriggerText');
+    var yearDropdown = document.getElementById('studentFilterYearDropdown');
+    var yearSearch = document.getElementById('studentFilterYearSearch');
+    var yearList = document.getElementById('studentFilterYearList');
+    var yearStatus = document.getElementById('studentFilterYearStatus');
+
+    var allYears = [];
+    for (var year = 1500; year >= 1350; year -= 1) {
+        allYears.push(year);
+    }
+
+    var state = {
+        opened: false,
+        loading: false,
+        page: 1,
+        perPage: 5,
+        hasMore: true,
+        query: '',
+        debounceTimer: null
+    };
+
+    function normalizeDigits(value) {
+        var map = {
+            '۰': '0', '۱': '1', '۲': '2', '۳': '3', '۴': '4',
+            '۵': '5', '۶': '6', '۷': '7', '۸': '8', '۹': '9',
+            '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4',
+            '٥': '5', '٦': '6', '٧': '7', '٨': '8', '٩': '9'
+        };
+        return String(value || '').replace(/[۰-۹٠-٩]/g, function (char) {
+            return map[char] || char;
+        });
+    }
+
+    function toPersianDigits(value) {
+        var en = '0123456789';
+        var fa = '۰۱۲۳۴۵۶۷۸۹';
+        return String(value || '').replace(/\d/g, function (digit) {
+            var index = en.indexOf(digit);
+            return index >= 0 ? fa[index] : digit;
+        });
+    }
+
+    function selectedYear() {
+        return parseInt((yearInput && yearInput.value) || '0', 10) || 0;
+    }
+
+    function setYearStatus(message) {
+        if (yearStatus) {
+            yearStatus.textContent = message;
+        }
+    }
+
+    function updateYearTriggerText() {
+        if (!yearTriggerText) {
+            return;
+        }
+        var selected = selectedYear();
+        yearTriggerText.textContent = selected > 0 ? toPersianDigits(selected) : 'انتخاب سال شمولیت';
+    }
+
+    function refreshLevelChips() {
+        for (var i = 0; i < levelButtons.length; i += 1) {
+            var button = levelButtons[i];
+            button.classList.toggle('is-active', (button.getAttribute('data-level') || '') === (levelInput ? levelInput.value : ''));
+        }
+    }
+
+    function filteredYears() {
+        if (!state.query) {
+            return allYears.slice();
+        }
+
+        return allYears.filter(function (item) {
+            return String(item).indexOf(state.query) !== -1;
+        });
+    }
+
+    function closeYearDropdown() {
+        state.opened = false;
+        if (yearDropdown) {
+            yearDropdown.hidden = true;
+        }
+        if (yearTrigger) {
+            yearTrigger.setAttribute('aria-expanded', 'false');
+        }
+    }
+
+    function openYearDropdown() {
+        state.opened = true;
+        if (yearDropdown) {
+            yearDropdown.hidden = false;
+        }
+        if (yearTrigger) {
+            yearTrigger.setAttribute('aria-expanded', 'true');
+        }
+        renderYearPage(true);
+        if (yearSearch) {
+            yearSearch.focus();
+        }
+    }
+
+    function createResetYearOption() {
+        var option = document.createElement('button');
+        option.type = 'button';
+        option.className = 'student-year-option';
+        option.textContent = 'همه سال‌ها';
+        option.addEventListener('click', function () {
+            if (yearInput) {
+                yearInput.value = '';
+            }
+            updateYearTriggerText();
+            closeYearDropdown();
+            form.submit();
+        });
+        return option;
+    }
+
+    function createYearOption(yearValue) {
+        var option = document.createElement('button');
+        option.type = 'button';
+        option.className = 'student-year-option';
+        option.setAttribute('role', 'option');
+        option.setAttribute('data-year', String(yearValue));
+        option.textContent = toPersianDigits(yearValue);
+
+        if (yearValue === selectedYear()) {
+            option.classList.add('is-selected');
+        }
+
+        option.addEventListener('click', function () {
+            if (yearInput) {
+                yearInput.value = String(yearValue);
+            }
+            updateYearTriggerText();
+            closeYearDropdown();
+            form.submit();
+        });
+
+        return option;
+    }
+
+    function renderYearPage(reset) {
+        if (!yearList) {
+            return;
+        }
+        if (reset) {
+            yearList.innerHTML = '';
+            state.page = 1;
+        }
+
+        var filtered = filteredYears();
+        var start = (state.page - 1) * state.perPage;
+        var end = start + state.perPage;
+        var chunk = filtered.slice(start, end);
+
+        if (reset && state.query === '') {
+            yearList.appendChild(createResetYearOption());
+        }
+
+        if (reset && chunk.length === 0) {
+            setYearStatus('سال مورد نظر پیدا نشد.');
+            state.hasMore = false;
+            return;
+        }
+
+        var fragment = document.createDocumentFragment();
+        for (var i = 0; i < chunk.length; i += 1) {
+            fragment.appendChild(createYearOption(chunk[i]));
+        }
+        yearList.appendChild(fragment);
+
+        state.hasMore = end < filtered.length;
+        setYearStatus(state.hasMore ? 'برای مشاهده موارد بیشتر اسکرول کنید.' : 'پایان لیست.');
+    }
+
+    function loadMoreYearPage() {
+        if (state.loading || !state.hasMore) {
+            return;
+        }
+        state.loading = true;
+        state.page += 1;
+        renderYearPage(false);
+        state.loading = false;
+    }
+
+    for (var i = 0; i < levelButtons.length; i += 1) {
+        (function (button) {
+            button.addEventListener('click', function () {
+                if (levelInput) {
+                    levelInput.value = button.getAttribute('data-level') || 'aali';
+                }
+                refreshLevelChips();
+
+                if (selectedYear() > 0) {
+                    form.submit();
+                    return;
+                }
+
+                openYearDropdown();
+            });
+        })(levelButtons[i]);
+    }
+
+    if (yearTrigger) {
+        yearTrigger.addEventListener('click', function () {
+            if (state.opened) {
+                closeYearDropdown();
+            } else {
+                openYearDropdown();
+            }
+        });
+    }
+
+    if (yearSearch) {
+        yearSearch.addEventListener('input', function () {
+            var nextQuery = normalizeDigits((yearSearch.value || '').trim());
+            if (state.debounceTimer) {
+                clearTimeout(state.debounceTimer);
+            }
+            state.debounceTimer = setTimeout(function () {
+                state.query = nextQuery;
+                renderYearPage(true);
+            }, 220);
+        });
+    }
+
+    if (yearList) {
+        yearList.addEventListener('scroll', function () {
+            if (!state.opened || state.loading || !state.hasMore) {
+                return;
+            }
+            var threshold = 30;
+            var remaining = yearList.scrollHeight - yearList.scrollTop - yearList.clientHeight;
+            if (remaining <= threshold) {
+                loadMoreYearPage();
+            }
+        });
+    }
+
+    document.addEventListener('click', function (event) {
+        if (!state.opened || !yearCombo) {
+            return;
+        }
+        if (!yearCombo.contains(event.target)) {
+            closeYearDropdown();
+        }
+    });
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && state.opened) {
+            closeYearDropdown();
+        }
+    });
+
+    updateYearTriggerText();
+    refreshLevelChips();
+})();
+</script>
+
 <div class="news-thumb">
     <div class="news-info">
         <table class="table table-bordered table-hover student-table">
@@ -44,6 +337,7 @@ $returnTo = '/students?level=' . urlencode((string) $level)
                 <th>نام</th>
                 <th>نام پدر</th>
                 <th>سطح</th>
+                <th>سال شمولیت</th>
                 <th>نام صنف</th>
                 <th>صنف/دوره</th>
                 <th>امتیاز</th>
@@ -64,6 +358,13 @@ $returnTo = '/students?level=' . urlencode((string) $level)
                     <td><?= e($student['name']) ?></td>
                     <td><?= e($student['father_name'] ?: '—') ?></td>
                     <td><?= e($student['level_name'] ?: '—') ?></td>
+                    <td>
+                        <?php if ((int) ($student['enrollment_year'] ?? 0) > 0): ?>
+                            <?= e(to_persian_number((string) $student['enrollment_year'])) ?>
+                        <?php else: ?>
+                            —
+                        <?php endif; ?>
+                    </td>
                     <td><?= e($student['class_name'] ?: '—') ?></td>
                     <td>
                         <?php if (!empty($student['semesters_display'])): ?>
@@ -119,10 +420,10 @@ $returnTo = '/students?level=' . urlencode((string) $level)
             <span>صفحه <?= e((string) $page) ?> از <?= e((string) $totalPages) ?></span>
             <div>
                 <?php if ($page > 1): ?>
-                    <a class="btn btn-default btn-sm" href="<?= e(url('/students?level=' . urlencode($level) . '&q=' . urlencode($q) . '&page_size=' . $pageSize . '&page=' . ($page - 1))) ?>">قبلی</a>
+                    <a class="btn btn-default btn-sm" href="<?= e(url('/students?level=' . urlencode((string) $level) . '&year=' . urlencode($selectedYear > 0 ? (string) $selectedYear : '') . '&q=' . urlencode((string) $q) . '&page_size=' . $pageSize . '&page=' . ($page - 1))) ?>">قبلی</a>
                 <?php endif; ?>
                 <?php if ($page < $totalPages): ?>
-                    <a class="btn btn-default btn-sm" href="<?= e(url('/students?level=' . urlencode($level) . '&q=' . urlencode($q) . '&page_size=' . $pageSize . '&page=' . ($page + 1))) ?>">بعدی</a>
+                    <a class="btn btn-default btn-sm" href="<?= e(url('/students?level=' . urlencode((string) $level) . '&year=' . urlencode($selectedYear > 0 ? (string) $selectedYear : '') . '&q=' . urlencode((string) $q) . '&page_size=' . $pageSize . '&page=' . ($page + 1))) ?>">بعدی</a>
                 <?php endif; ?>
             </div>
         </div>

@@ -485,6 +485,7 @@ $returnTo = '/students?level=' . urlencode((string) $level)
         var nameEl = document.getElementById('studentGradesStudentName');
         var studentIdInput = document.getElementById('studentGradesStudentId');
         var changedSubjectIdsInput = document.getElementById('studentGradesChangedSubjectIds');
+        var formEl = document.getElementById('studentGradesForm');
         var tableBody = modal.querySelector('.js-grades-modal-body');
         var messageEl = modal.querySelector('.js-grades-modal-message');
         var submitButton = modal.querySelector('.js-grades-modal-submit');
@@ -543,11 +544,13 @@ $returnTo = '/students?level=' . urlencode((string) $level)
 
             var grouped = {};
             var editableCount = 0;
+            var subjectCount = 0;
             subjects.forEach(function (subject) {
                 var subjectId = Number(subject.id || 0);
                 if (!subjectId) {
                     return;
                 }
+                subjectCount += 1;
 
                 var isEditable = subject.editable === true || subject.editable === 1 || subject.editable === '1';
                 if (isEditable) {
@@ -612,6 +615,9 @@ $returnTo = '/students?level=' . urlencode((string) $level)
 
                 nameCell.textContent = subjectRow.name || '—';
 
+                var scoreWrap = document.createElement('div');
+                scoreWrap.className = 'grades-modal-score-wrap';
+
                 var input = document.createElement('input');
                 input.type = 'number';
                 input.min = '0';
@@ -630,16 +636,133 @@ $returnTo = '/students?level=' . urlencode((string) $level)
                         dirtySubjectMap[String(subjectRow.id)] = true;
                         syncChangedSubjectIds();
                     });
+                    scoreWrap.appendChild(input);
                 } else {
                     input.disabled = true;
                     input.classList.add('grades-modal-locked-input');
                     input.title = 'فقط نمرات سمستر/دوره فعلی قابل ویرایش است.';
                     input.tabIndex = -1;
-                    scoreCell.classList.add('grade-empty');
+
+                    var lockedTop = document.createElement('div');
+                    lockedTop.className = 'grades-modal-locked-top';
+                    lockedTop.appendChild(input);
+
+                    var toggleButton = document.createElement('button');
+                    toggleButton.type = 'button';
+                    toggleButton.className = 'btn btn-xs btn-default grades-override-toggle';
+                    toggleButton.textContent = 'تغییر';
+                    toggleButton.setAttribute('aria-expanded', 'false');
+                    lockedTop.appendChild(toggleButton);
+                    scoreWrap.appendChild(lockedTop);
+
+                    var overridePanel = document.createElement('div');
+                    overridePanel.className = 'grades-override-panel';
+                    overridePanel.hidden = true;
+
+                    var scoreField = document.createElement('div');
+                    scoreField.className = 'grades-override-field';
+                    var scoreLabel = document.createElement('label');
+                    scoreLabel.className = 'grades-override-label';
+                    scoreLabel.textContent = 'نمره جدید';
+                    scoreField.appendChild(scoreLabel);
+
+                    var overrideScoreInput = document.createElement('input');
+                    overrideScoreInput.type = 'number';
+                    overrideScoreInput.min = '0';
+                    overrideScoreInput.max = '100';
+                    overrideScoreInput.className = 'form-control grades-override-score js-override-score';
+                    overrideScoreInput.name = 'override_scores[' + subjectRow.id + ']';
+                    overrideScoreInput.setAttribute('autocomplete', 'off');
+                    overrideScoreInput.setAttribute('data-subject-id', String(subjectRow.id));
+                    scoreField.appendChild(overrideScoreInput);
+                    overridePanel.appendChild(scoreField);
+
+                    var reasonField = document.createElement('div');
+                    reasonField.className = 'grades-override-field';
+                    var reasonLabel = document.createElement('label');
+                    reasonLabel.className = 'grades-override-label';
+                    reasonLabel.textContent = 'دلیل تغییر';
+                    reasonField.appendChild(reasonLabel);
+
+                    var overrideReasonInput = document.createElement('textarea');
+                    overrideReasonInput.className = 'form-control grades-override-reason js-override-reason';
+                    overrideReasonInput.name = 'override_reasons[' + subjectRow.id + ']';
+                    overrideReasonInput.rows = 2;
+                    overrideReasonInput.setAttribute('data-subject-id', String(subjectRow.id));
+                    reasonField.appendChild(overrideReasonInput);
+                    overridePanel.appendChild(reasonField);
+
+                    toggleButton.addEventListener('click', function () {
+                        var open = overridePanel.hidden;
+                        overridePanel.hidden = !open;
+                        toggleButton.classList.toggle('is-open', open);
+                        toggleButton.textContent = open ? 'بستن' : 'تغییر';
+                        toggleButton.setAttribute('aria-expanded', open ? 'true' : 'false');
+                        if (open) {
+                            overrideScoreInput.focus();
+                        }
+                    });
+
+                    scoreWrap.appendChild(overridePanel);
                 }
-                scoreCell.appendChild(input);
+                scoreCell.appendChild(scoreWrap);
 
                 return [nameCell, scoreCell];
+            }
+
+            function openOverridePanelForInput(scoreInput) {
+                if (!scoreInput) {
+                    return;
+                }
+                var panel = scoreInput.closest('.grades-override-panel');
+                if (panel) {
+                    panel.hidden = false;
+                }
+                var cell = scoreInput.closest('td');
+                if (!cell) {
+                    return;
+                }
+                var button = cell.querySelector('.grades-override-toggle');
+                if (button) {
+                    button.classList.add('is-open');
+                    button.textContent = 'بستن';
+                    button.setAttribute('aria-expanded', 'true');
+                }
+            }
+
+            function validateOverrideRows() {
+                var overrideScoreInputs = modal.querySelectorAll('.js-override-score');
+                for (var i = 0; i < overrideScoreInputs.length; i += 1) {
+                    var scoreInput = overrideScoreInputs[i];
+                    var scoreRaw = String(scoreInput.value || '').trim();
+                    if (scoreRaw === '') {
+                        continue;
+                    }
+
+                    var scoreValue = Number(scoreRaw);
+                    if (Number.isNaN(scoreValue) || scoreValue < 0 || scoreValue > 100) {
+                        setMessage('نمره جدید باید بین ۰ تا ۱۰۰ باشد.', 'is-error');
+                        openOverridePanelForInput(scoreInput);
+                        scoreInput.focus();
+                        return false;
+                    }
+
+                    var subjectId = scoreInput.getAttribute('data-subject-id') || '';
+                    var reasonInput = modal.querySelector('.js-override-reason[data-subject-id="' + subjectId + '"]');
+                    var reasonText = reasonInput ? String(reasonInput.value || '').trim() : '';
+                    if (reasonText.length < 3) {
+                        setMessage('برای نمره جدید، دلیل تغییر حداقل ۳ حرف الزامی است.', 'is-error');
+                        openOverridePanelForInput(scoreInput);
+                        if (reasonInput) {
+                            reasonInput.focus();
+                        } else {
+                            scoreInput.focus();
+                        }
+                        return false;
+                    }
+                }
+
+                return true;
             }
 
             function summaryText(termGroup) {
@@ -708,11 +831,19 @@ $returnTo = '/students?level=' . urlencode((string) $level)
                 tableBody.appendChild(summaryRow);
             }
 
-            submitButton.disabled = editableCount === 0;
+            submitButton.disabled = subjectCount === 0;
             if (editableCount > 0) {
                 setMessage('فقط سطرهای مربوط به سمستر/دوره فعلی قابل ویرایش است.', '');
             } else {
-                setMessage('در حال حاضر سطر قابل ویرایش برای این شاگرد موجود نیست.', 'is-error');
+                setMessage('سطرها قفل است؛ برای تغییر، دکمه «تغییر» هر مضمون را بزنید و نمره جدید با دلیل بنویسید.', '');
+            }
+
+            if (formEl) {
+                formEl.onsubmit = function (event) {
+                    if (!validateOverrideRows()) {
+                        event.preventDefault();
+                    }
+                };
             }
         }
 

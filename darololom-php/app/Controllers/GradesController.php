@@ -142,6 +142,14 @@ final class GradesController extends Controller
         }
         $hasChangedSubjectIdsField = array_key_exists('changed_subject_ids', $_POST);
         $changedSubjectIds = $this->parseChangedSubjectIds((string) ($_POST['changed_subject_ids'] ?? ''));
+        $overrideScores = $_POST['override_scores'] ?? [];
+        if (!is_array($overrideScores)) {
+            $overrideScores = [];
+        }
+        $overrideReasons = $_POST['override_reasons'] ?? [];
+        if (!is_array($overrideReasons)) {
+            $overrideReasons = [];
+        }
 
         $student = $this->studentProfile($studentId);
         if (!$student) {
@@ -151,7 +159,9 @@ final class GradesController extends Controller
 
         $currentSubjects = $this->availableSubjectsForStudent($student);
         $allowedSubjects = $currentSubjects;
+        $allModalSubjects = $this->allModalSubjectsForStudent($student);
         $recordedByTeacherId = null;
+        $assignment = null;
 
         if ($role === 'teacher') {
             $teacherId = (int) ($user['teacher_id'] ?? 0);
@@ -168,10 +178,62 @@ final class GradesController extends Controller
             }
 
             $allowedSubjects = $this->filterSubjectsByAllowedIds($allowedSubjects, $assignment['subject_ids']);
+            $allModalSubjects = $this->filterSubjectsByAllowedIds($allModalSubjects, $assignment['subject_ids']);
             $recordedByTeacherId = $teacherId;
         }
 
         $allowedSubjectIds = array_map(static fn (array $row): int => (int) $row['id'], $allowedSubjects);
+        $allowedSubjectMap = [];
+        foreach ($allowedSubjectIds as $allowedSubjectId) {
+            $allowedSubjectMap[(int) $allowedSubjectId] = true;
+        }
+
+        $allModalSubjectNameMap = [];
+        foreach ($allModalSubjects as $modalSubject) {
+            $modalSubjectId = (int) ($modalSubject['id'] ?? 0);
+            if ($modalSubjectId > 0) {
+                $allModalSubjectNameMap[$modalSubjectId] = (string) ($modalSubject['name'] ?? '');
+            }
+        }
+
+        $overrideUpdates = [];
+        foreach ($overrideScores as $subjectIdRaw => $scoreRaw) {
+            $subjectId = (int) $subjectIdRaw;
+            $scoreText = trim((string) $scoreRaw);
+            if ($subjectId <= 0 || $scoreText === '') {
+                continue;
+            }
+
+            if (!isset($allModalSubjectNameMap[$subjectId])) {
+                continue;
+            }
+            if (isset($allowedSubjectMap[$subjectId])) {
+                continue;
+            }
+
+            $reason = trim((string) ($overrideReasons[$subjectIdRaw] ?? $overrideReasons[$subjectId] ?? ''));
+            if ($reason === '' || mb_strlen($reason) < 3) {
+                flash('error', 'برای تغییر نمره مضمون قفل‌شده، نوشتن دلیل حداقل ۳ حرف الزامی است.');
+                $returnTo = trim((string) ($_POST['return_to'] ?? ''));
+                if ($this->isSafeReturnPath($returnTo)) {
+                    $this->redirect($returnTo);
+                }
+                $this->redirect('/grades?student_id=' . $studentId);
+            }
+
+            $overrideUpdates[] = [
+                'subject_id' => $subjectId,
+                'subject_name' => $allModalSubjectNameMap[$subjectId],
+                'score' => max(0, min(100, (int) $scoreText)),
+                'reason' => $reason,
+            ];
+        }
+
+        $overrideSubjectIds = array_values(array_unique(array_map(
+            static fn (array $item): int => (int) ($item['subject_id'] ?? 0),
+            $overrideUpdates
+        )));
+        $previousOverrideScoreMap = $this->scoreMapForStudentSubjectIds($studentId, $overrideSubjectIds);
 
         $stmt = $db->prepare('INSERT INTO student_scores (student_id, subject_id, recorded_by_teacher_id, score, created_at, updated_at)
             VALUES (:student_id, :subject_id, :recorded_by_teacher_id, :score, NOW(), NOW())
@@ -180,26 +242,79 @@ final class GradesController extends Controller
             score = VALUES(score),
             updated_at = NOW()');
 
-        foreach ($scores as $subjectId => $score) {
-            $subjectId = (int) $subjectId;
-            if ($subjectId <= 0 || $score === '' || !in_array($subjectId, $allowedSubjectIds, true)) {
-                continue;
-            }
-            if ($hasChangedSubjectIdsField && !in_array($subjectId, $changedSubjectIds, true)) {
-                continue;
+        $overrideAppliedCount = 0;
+        try {
+            if (!$db->inTransaction()) {
+                $db->beginTransaction();
             }
 
-            $scoreValue = max(0, min(100, (int) $score));
-            $stmt->execute([
-                'student_id' => $studentId,
-                'subject_id' => $subjectId,
-                'recorded_by_teacher_id' => $recordedByTeacherId,
-                'score' => $scoreValue,
-            ]);
+            foreach ($scores as $subjectId => $score) {
+                $subjectId = (int) $subjectId;
+                if ($subjectId <= 0 || $score === '' || !in_array($subjectId, $allowedSubjectIds, true)) {
+                    continue;
+                }
+                if ($hasChangedSubjectIdsField && !in_array($subjectId, $changedSubjectIds, true)) {
+                    continue;
+                }
+
+                $scoreValue = max(0, min(100, (int) $score));
+                $stmt->execute([
+                    'student_id' => $studentId,
+                    'subject_id' => $subjectId,
+                    'recorded_by_teacher_id' => $recordedByTeacherId,
+                    'score' => $scoreValue,
+                ]);
+            }
+
+            foreach ($overrideUpdates as $overrideUpdate) {
+                $subjectId = (int) ($overrideUpdate['subject_id'] ?? 0);
+                if ($subjectId <= 0) {
+                    continue;
+                }
+
+                $newScore = (int) ($overrideUpdate['score'] ?? 0);
+                $stmt->execute([
+                    'student_id' => $studentId,
+                    'subject_id' => $subjectId,
+                    'recorded_by_teacher_id' => $recordedByTeacherId,
+                    'score' => $newScore,
+                ]);
+                $overrideAppliedCount += 1;
+
+                $this->appendLockedScoreChangeLog([
+                    'changed_at' => date('c'),
+                    'actor_user_id' => (int) ($user['id'] ?? 0),
+                    'actor_role' => (string) ($user['role'] ?? ''),
+                    'actor_teacher_id' => (int) ($user['teacher_id'] ?? 0),
+                    'student_id' => $studentId,
+                    'subject_id' => $subjectId,
+                    'subject_name' => (string) ($overrideUpdate['subject_name'] ?? ''),
+                    'old_score' => $previousOverrideScoreMap[$subjectId] ?? null,
+                    'new_score' => $newScore,
+                    'reason' => (string) ($overrideUpdate['reason'] ?? ''),
+                ]);
+            }
+
+            if ($db->inTransaction()) {
+                $db->commit();
+            }
+        } catch (\Throwable $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            flash('error', 'ذخیره نمرات ناموفق بود. لطفاً دوباره تلاش کنید.');
+            $returnTo = trim((string) ($_POST['return_to'] ?? ''));
+            if ($this->isSafeReturnPath($returnTo)) {
+                $this->redirect($returnTo);
+            }
+            $this->redirect('/grades?student_id=' . $studentId);
         }
 
         $promoted = $this->promoteStudentIfEligible($student, $currentSubjects);
         $successMessage = 'نمرات با موفقیت ذخیره شد.';
+        if ($overrideAppliedCount > 0) {
+            $successMessage .= ' ' . (string) $overrideAppliedCount . ' نمرهٔ قفل‌شده با دلیل تغییر به‌روزرسانی شد.';
+        }
         if ($promoted) {
             $successMessage .= ' شاگرد به مرحله بعد ارتقا یافت.';
         }
@@ -843,6 +958,63 @@ final class GradesController extends Controller
         }
 
         return array_map('intval', array_keys($ids));
+    }
+
+    /**
+     * @param array<int> $subjectIds
+     * @return array<int, int|null>
+     */
+    private function scoreMapForStudentSubjectIds(int $studentId, array $subjectIds): array
+    {
+        if ($studentId <= 0 || $subjectIds === []) {
+            return [];
+        }
+
+        $subjectIds = array_values(array_unique(array_filter(
+            array_map('intval', $subjectIds),
+            static fn (int $id): bool => $id > 0
+        )));
+        if ($subjectIds === []) {
+            return [];
+        }
+
+        $db = Database::connection();
+        $placeholders = implode(',', array_fill(0, count($subjectIds), '?'));
+        $stmt = $db->prepare(
+            "SELECT subject_id, score
+             FROM student_scores
+             WHERE student_id = ?
+               AND subject_id IN ($placeholders)"
+        );
+        $stmt->execute(array_merge([$studentId], $subjectIds));
+
+        $map = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $subjectId = (int) ($row['subject_id'] ?? 0);
+            if ($subjectId > 0) {
+                $map[$subjectId] = isset($row['score']) ? (int) $row['score'] : null;
+            }
+        }
+
+        return $map;
+    }
+
+    /**
+     * @param array<string, mixed> $entry
+     */
+    private function appendLockedScoreChangeLog(array $entry): void
+    {
+        $storageDir = dirname(__DIR__, 2) . '/storage/logs';
+        if (!is_dir($storageDir)) {
+            @mkdir($storageDir, 0775, true);
+        }
+
+        $payload = json_encode($entry, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($payload === false) {
+            return;
+        }
+
+        @file_put_contents($storageDir . '/locked_score_changes.log', $payload . PHP_EOL, FILE_APPEND | LOCK_EX);
     }
 
     private function isSafeReturnPath(string $path): bool

@@ -41,7 +41,7 @@ $returnTo = '/students?' . http_build_query($returnToQuery);
     <h2>لیست دانش‌آموزان</h2>
 </div>
 
-<div class="toolbar-row">
+<div class="toolbar-row student-toolbar-row">
     <form method="get" class="filter-form form-inline student-list-filter" id="studentListFilterForm">
         <input type="hidden" name="level" id="student_filter_level" value="<?= e((string) $level) ?>">
         <input type="hidden" name="year" id="student_filter_year" value="<?= e($selectedYear > 0 ? (string) $selectedYear : '') ?>">
@@ -89,17 +89,17 @@ $returnTo = '/students?' . http_build_query($returnToQuery);
             </div>
         </div>
 
-        <input class="form-control" type="text" name="q" value="<?= e($q) ?>" placeholder="جستجو نام، پدر، موبایل یا تذکره...">
-        <select name="page_size" class="form-control">
+        <input class="form-control student-filter-search" type="text" name="q" value="<?= e($q) ?>" placeholder="جستجو نام، پدر، موبایل یا تذکره...">
+        <select name="page_size" class="form-control student-filter-size">
             <?php foreach ($allowedSizes as $size): ?>
                 <option value="<?= e((string) $size) ?>" <?= (int) $pageSize === (int) $size ? 'selected' : '' ?>><?= e((string) $size) ?></option>
             <?php endforeach; ?>
         </select>
-        <button class="section-btn btn btn-default" type="submit">فیلتر</button>
+        <button class="section-btn btn btn-default student-filter-submit" type="submit">فیلتر</button>
     </form>
 
     <?php if (can('register_students')): ?>
-        <a class="section-btn btn btn-default" href="<?= e(url('/students/create')) ?>">+ ثبت دانش‌آموز</a>
+        <a class="section-btn btn btn-default student-create-btn" href="<?= e(url('/students/create')) ?>">+ ثبت دانش‌آموز</a>
     <?php endif; ?>
 </div>
 

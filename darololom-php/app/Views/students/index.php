@@ -37,8 +37,11 @@ $returnToQuery['page'] = (int) $page;
 $returnTo = '/students?' . http_build_query($returnToQuery);
 ?>
 
-<div class="section-title">
+<div class="section-title student-list-head">
     <h2>لیست دانش‌آموزان</h2>
+    <?php if (can('register_students')): ?>
+        <a class="section-btn btn btn-default student-create-btn" href="<?= e(url('/students/create')) ?>">+ ثبت دانش‌آموز</a>
+    <?php endif; ?>
 </div>
 
 <div class="toolbar-row student-toolbar-row">
@@ -97,10 +100,6 @@ $returnTo = '/students?' . http_build_query($returnToQuery);
         </select>
         <button class="section-btn btn btn-default student-filter-submit" type="submit">فیلتر</button>
     </form>
-
-    <?php if (can('register_students')): ?>
-        <a class="section-btn btn btn-default student-create-btn" href="<?= e(url('/students/create')) ?>">+ ثبت دانش‌آموز</a>
-    <?php endif; ?>
 </div>
 
 <script>

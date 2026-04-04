@@ -49,56 +49,75 @@ $returnTo = '/students?' . http_build_query($returnToQuery);
         <input type="hidden" name="level" id="student_filter_level" value="<?= e((string) $level) ?>">
         <input type="hidden" name="year" id="student_filter_year" value="<?= e($selectedYear > 0 ? (string) $selectedYear : '') ?>">
 
-        <div class="student-level-tabs" id="studentLevelTabs">
-            <button type="button" class="student-level-chip js-student-level-chip<?= $level === 'aali' ? ' is-active' : '' ?>" data-level="aali">عالی</button>
-            <button type="button" class="student-level-chip js-student-level-chip<?= $level === 'moteseta' ? ' is-active' : '' ?>" data-level="moteseta">متوسطه</button>
-            <button type="button" class="student-level-chip js-student-level-chip<?= $level === 'ebtedai' ? ' is-active' : '' ?>" data-level="ebtedai">ابتداییه</button>
-        </div>
-
-        <div class="student-year-combo student-list-year-combo" id="studentFilterYearCombo">
-            <button type="button" class="form-control student-year-trigger" id="studentFilterYearTrigger" aria-haspopup="listbox" aria-expanded="false">
-                <span id="studentFilterYearTriggerText"><?= e($selectedYearLabel) ?></span>
-                <span class="student-year-arrow" aria-hidden="true">▾</span>
-            </button>
-            <div class="student-year-dropdown" id="studentFilterYearDropdown" hidden>
-                <input type="text" id="studentFilterYearSearch" class="form-control" placeholder="جستجوی سال..." autocomplete="off">
-                <div class="student-year-list" id="studentFilterYearList" role="listbox"></div>
-                <div class="student-year-status" id="studentFilterYearStatus"></div>
+        <div class="student-filter-block student-filter-block--level">
+            <div class="student-filter-label">سطح آموزشی</div>
+            <div class="student-level-tabs" id="studentLevelTabs">
+                <button type="button" class="student-level-chip js-student-level-chip<?= $level === 'aali' ? ' is-active' : '' ?>" data-level="aali">عالی</button>
+                <button type="button" class="student-level-chip js-student-level-chip<?= $level === 'moteseta' ? ' is-active' : '' ?>" data-level="moteseta">متوسطه</button>
+                <button type="button" class="student-level-chip js-student-level-chip<?= $level === 'ebtedai' ? ' is-active' : '' ?>" data-level="ebtedai">ابتداییه</button>
             </div>
         </div>
 
-        <div class="student-term-filter <?= $selectedYear > 0 ? '' : 'is-disabled' ?>" id="studentTermFilter">
-            <div class="student-term-title" id="studentTermFilterTitle"><?= (string) $level === 'aali' ? 'صنف (چند انتخابی)' : 'دوره (چند انتخابی)' ?></div>
-            <div class="student-term-help" id="studentTermFilterHelp" <?= $selectedYear > 0 ? 'hidden' : '' ?>>ابتدا سال شمولیت را انتخاب کنید.</div>
-
-            <div class="student-term-options" id="studentSemesterFilterGroup" <?= (string) $level === 'aali' ? '' : 'hidden' ?>>
-                <label class="student-term-option">
-                    <input type="checkbox" name="semester[]" value="13" <?= in_array(13, $selectedSemesterNumbers, true) ? 'checked' : '' ?> <?= $selectedYear > 0 ? '' : 'disabled' ?>>
-                    صنف <?= e(to_persian_number('13')) ?>
-                </label>
-                <label class="student-term-option">
-                    <input type="checkbox" name="semester[]" value="14" <?= in_array(14, $selectedSemesterNumbers, true) ? 'checked' : '' ?> <?= $selectedYear > 0 ? '' : 'disabled' ?>>
-                    صنف <?= e(to_persian_number('14')) ?>
-                </label>
+        <div class="student-filter-block student-filter-block--year">
+            <div class="student-filter-label">سال شمولیت</div>
+            <div class="student-year-combo student-list-year-combo" id="studentFilterYearCombo">
+                <button type="button" class="form-control student-year-trigger" id="studentFilterYearTrigger" aria-haspopup="listbox" aria-expanded="false">
+                    <span id="studentFilterYearTriggerText"><?= e($selectedYearLabel) ?></span>
+                    <span class="student-year-arrow" aria-hidden="true">▾</span>
+                </button>
+                <div class="student-year-dropdown" id="studentFilterYearDropdown" hidden>
+                    <input type="text" id="studentFilterYearSearch" class="form-control" placeholder="جستجوی سال..." autocomplete="off">
+                    <div class="student-year-list" id="studentFilterYearList" role="listbox"></div>
+                    <div class="student-year-status" id="studentFilterYearStatus"></div>
+                </div>
             </div>
+        </div>
 
-            <div class="student-term-options" id="studentPeriodFilterGroup" <?= (string) $level !== 'aali' ? '' : 'hidden' ?>>
-                <?php for ($periodNumber = 1; $periodNumber <= 6; $periodNumber++): ?>
+        <div class="student-filter-block student-filter-block--search">
+            <div class="student-filter-label">جستجو</div>
+            <input class="form-control student-filter-search" type="text" name="q" value="<?= e($q) ?>" placeholder="نام، پدر، موبایل یا تذکره...">
+        </div>
+
+        <div class="student-filter-block student-filter-block--size">
+            <div class="student-filter-label">تعداد در صفحه</div>
+            <select name="page_size" class="form-control student-filter-size">
+                <?php foreach ($allowedSizes as $size): ?>
+                    <option value="<?= e((string) $size) ?>" <?= (int) $pageSize === (int) $size ? 'selected' : '' ?>><?= e((string) $size) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+
+        <div class="student-filter-block student-filter-block--submit">
+            <div class="student-filter-label student-filter-label--empty" aria-hidden="true">.</div>
+            <button class="section-btn btn btn-default student-filter-submit" type="submit">فیلتر</button>
+        </div>
+
+        <div class="student-filter-block student-filter-block--term">
+            <div class="student-term-filter <?= $selectedYear > 0 ? '' : 'is-disabled' ?>" id="studentTermFilter">
+                <div class="student-term-title" id="studentTermFilterTitle"><?= (string) $level === 'aali' ? 'صنف (چند انتخابی)' : 'دوره (چند انتخابی)' ?></div>
+                <div class="student-term-help" id="studentTermFilterHelp" <?= $selectedYear > 0 ? 'hidden' : '' ?>>ابتدا سال شمولیت را انتخاب کنید.</div>
+
+                <div class="student-term-options student-term-options--semester" id="studentSemesterFilterGroup" <?= (string) $level === 'aali' ? '' : 'hidden' ?>>
                     <label class="student-term-option">
-                        <input type="checkbox" name="period[]" value="<?= e((string) $periodNumber) ?>" <?= in_array($periodNumber, $selectedPeriodNumbers, true) ? 'checked' : '' ?> <?= $selectedYear > 0 ? '' : 'disabled' ?>>
-                        دوره <?= e(to_persian_number((string) $periodNumber)) ?>
+                        <input type="checkbox" name="semester[]" value="13" <?= in_array(13, $selectedSemesterNumbers, true) ? 'checked' : '' ?> <?= $selectedYear > 0 ? '' : 'disabled' ?>>
+                        <span class="student-term-option-text">صنف <?= e(to_persian_number('13')) ?></span>
                     </label>
-                <?php endfor; ?>
+                    <label class="student-term-option">
+                        <input type="checkbox" name="semester[]" value="14" <?= in_array(14, $selectedSemesterNumbers, true) ? 'checked' : '' ?> <?= $selectedYear > 0 ? '' : 'disabled' ?>>
+                        <span class="student-term-option-text">صنف <?= e(to_persian_number('14')) ?></span>
+                    </label>
+                </div>
+
+                <div class="student-term-options student-term-options--period" id="studentPeriodFilterGroup" <?= (string) $level !== 'aali' ? '' : 'hidden' ?>>
+                    <?php for ($periodNumber = 1; $periodNumber <= 6; $periodNumber++): ?>
+                        <label class="student-term-option">
+                            <input type="checkbox" name="period[]" value="<?= e((string) $periodNumber) ?>" <?= in_array($periodNumber, $selectedPeriodNumbers, true) ? 'checked' : '' ?> <?= $selectedYear > 0 ? '' : 'disabled' ?>>
+                            <span class="student-term-option-text">دوره <?= e(to_persian_number((string) $periodNumber)) ?></span>
+                        </label>
+                    <?php endfor; ?>
+                </div>
             </div>
         </div>
-
-        <input class="form-control student-filter-search" type="text" name="q" value="<?= e($q) ?>" placeholder="جستجو نام، پدر، موبایل یا تذکره...">
-        <select name="page_size" class="form-control student-filter-size">
-            <?php foreach ($allowedSizes as $size): ?>
-                <option value="<?= e((string) $size) ?>" <?= (int) $pageSize === (int) $size ? 'selected' : '' ?>><?= e((string) $size) ?></option>
-            <?php endforeach; ?>
-        </select>
-        <button class="section-btn btn btn-default student-filter-submit" type="submit">فیلتر</button>
     </form>
 </div>
 

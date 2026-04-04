@@ -112,13 +112,36 @@
 }
 
 .student-list-filter {
-    align-items: flex-end;
-    flex: 1 1 760px;
+    display: grid;
+    grid-template-columns: minmax(260px, 1.2fr) minmax(210px, 0.9fr) minmax(240px, 1fr) 120px 110px;
+    align-items: end;
+    gap: 10px;
+    flex: 1 1 100%;
+    width: 100%;
     background: #ffffff;
     border: 1px solid #dfe8c9;
     border-radius: 14px;
     padding: 10px 12px;
     box-shadow: 0 8px 18px rgba(56, 74, 31, 0.08);
+}
+
+.student-filter-block {
+    min-width: 0;
+}
+
+.student-filter-block--term {
+    grid-column: 1 / -1;
+}
+
+.student-filter-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #617441;
+    margin-bottom: 4px;
+}
+
+.student-filter-label--empty {
+    visibility: hidden;
 }
 
 .student-list-filter .form-control {
@@ -140,18 +163,21 @@
     border: 1px solid #cedbb0;
     border-radius: 10px;
     background: linear-gradient(180deg, #f9fced 0%, #eef6d9 100%);
-    padding: 4px;
-    min-height: 40px;
+    height: 40px;
+    padding: 2px 4px;
+    box-sizing: border-box;
 }
 
 .student-level-chip {
     border: none;
     background: transparent;
     color: #5d6f33;
-    padding: 8px 14px;
+    height: 32px;
+    padding: 0 14px;
     border-radius: 8px;
     font-weight: 700;
     font-size: 13px;
+    line-height: 1;
     cursor: pointer;
     min-width: 72px;
     text-align: center;
@@ -168,7 +194,7 @@
 }
 
 .student-list-year-combo {
-    min-width: 200px;
+    min-width: 0;
 }
 
 .student-year-combo {
@@ -246,60 +272,92 @@
 
 .student-term-filter {
     min-width: 260px;
-    border: 1px solid #d6e2b6;
+    border: 1px solid #cfdcb0;
     border-radius: 12px;
-    background: #fbfdf6;
-    padding: 8px 10px;
+    background: #ffffff;
+    padding: 9px 10px;
+    box-shadow: inset 0 1px 0 #f6faec;
 }
 
 .student-term-filter.is-disabled {
-    opacity: 0.75;
+    opacity: 0.65;
 }
 
 .student-term-title {
     font-size: 12px;
     font-weight: 700;
-    color: #4f6327;
-    margin-bottom: 6px;
+    color: #3e5120;
+    margin-bottom: 7px;
 }
 
 .student-term-help {
     font-size: 12px;
     color: #6d7c50;
-    margin-bottom: 6px;
+    margin-bottom: 7px;
 }
 
 .student-term-options {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
+    display: grid;
+    gap: 7px;
+}
+
+.student-term-options--semester {
+    grid-template-columns: repeat(2, minmax(96px, 1fr));
+}
+
+.student-term-options--period {
+    grid-template-columns: repeat(3, minmax(88px, 1fr));
+}
+
+.student-term-options[hidden] {
+    display: none !important;
+}
+
+.student-term-help[hidden] {
+    display: none !important;
 }
 
 .student-term-option {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    border: 1px solid #d3dfb1;
-    border-radius: 16px;
-    background: #ffffff;
-    padding: 4px 8px;
+    justify-content: flex-start;
+    gap: 6px;
+    border: 1px solid #d4debc;
+    border-radius: 10px;
+    background: #f9fcef;
+    padding: 7px 9px;
     font-size: 12px;
-    color: #3f4f22;
+    color: #314417;
     margin-bottom: 0;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.student-term-option:hover {
+    border-color: #abc568;
+    background: #f1f8dc;
 }
 
 .student-term-option input[type='checkbox'] {
     margin: 0;
+    width: 14px;
+    height: 14px;
+    accent-color: #8fae2f;
+}
+
+.student-term-option-text {
+    font-weight: 600;
+    line-height: 1.2;
 }
 
 .student-filter-search {
-    min-width: 260px;
-    flex: 1 1 280px;
+    width: 100%;
 }
 
 .student-filter-size {
-    min-width: 108px !important;
-    max-width: 130px;
+    width: 100%;
+    min-width: 0 !important;
+    max-width: none;
 }
 
 .student-filter-submit,
@@ -356,6 +414,15 @@
         grid-template-columns: 1fr;
     }
 
+    .student-list-filter {
+        grid-template-columns: 1fr;
+        align-items: end;
+    }
+
+    .student-filter-block--term {
+        grid-column: auto;
+    }
+
     .student-level-tabs {
         width: 100%;
         justify-content: space-between;
@@ -369,24 +436,22 @@
         width: 100%;
     }
 
-    .student-list-filter {
+    .student-term-options--period {
+        grid-template-columns: repeat(2, minmax(88px, 1fr));
+    }
+
+    .student-filter-search {
         width: 100%;
-        align-items: stretch;
+    }
+
+    .student-filter-size,
+    .student-filter-submit {
+        width: 100%;
     }
 
     .student-list-head {
         flex-direction: column;
         align-items: stretch;
-    }
-
-    .student-filter-search {
-        min-width: 100%;
-    }
-
-    .student-filter-size,
-    .student-filter-submit {
-        flex: 1 1 140px;
-        max-width: none;
     }
 
     .student-list-head .student-create-btn {

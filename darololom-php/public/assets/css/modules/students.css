@@ -201,6 +201,54 @@
     color: #667085;
 }
 
+.student-term-filter {
+    min-width: 260px;
+    border: 1px solid #d9e6b5;
+    border-radius: 10px;
+    background: #f7faee;
+    padding: 8px 10px;
+}
+
+.student-term-filter.is-disabled {
+    opacity: 0.75;
+}
+
+.student-term-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #4f6327;
+    margin-bottom: 6px;
+}
+
+.student-term-help {
+    font-size: 12px;
+    color: #6d7c50;
+    margin-bottom: 6px;
+}
+
+.student-term-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.student-term-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border: 1px solid #d3dfb1;
+    border-radius: 16px;
+    background: #ffffff;
+    padding: 4px 8px;
+    font-size: 12px;
+    color: #3f4f22;
+    margin-bottom: 0;
+}
+
+.student-term-option input[type='checkbox'] {
+    margin: 0;
+}
+
 @media (max-width: 991px) {
     .wizard-header {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -221,6 +269,10 @@
     }
 
     .student-list-year-combo {
+        width: 100%;
+    }
+
+    .student-term-filter {
         width: 100%;
     }
 }

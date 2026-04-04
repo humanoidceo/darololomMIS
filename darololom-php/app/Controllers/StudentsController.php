@@ -19,6 +19,8 @@ final class StudentsController extends Controller
         $q = trim((string) ($_GET['q'] ?? ''));
         $level = trim((string) ($_GET['level'] ?? 'aali'));
         $year = (int) ($_GET['year'] ?? 0);
+        $semesterNumbers = $this->normalizeIntSelections($_GET['semester'] ?? [], 13, 14);
+        $periodNumbers = $this->normalizeIntSelections($_GET['period'] ?? [], 1, 6);
         $page = max(1, (int) ($_GET['page'] ?? 1));
 
         if (!in_array($level, ['aali', 'moteseta', 'ebtedai'], true)) {
@@ -26,6 +28,10 @@ final class StudentsController extends Controller
         }
         if ($year < 1350 || $year > 1500) {
             $year = 0;
+        }
+        if ($year === 0) {
+            $semesterNumbers = [];
+            $periodNumbers = [];
         }
 
         $allowedSizes = paginated_sizes();
@@ -48,6 +54,36 @@ final class StudentsController extends Controller
             $filters[] = 's.enrollment_year = :enrollment_year';
             $bind['enrollment_year'] = $year;
         }
+        if ($level === 'aali' && $semesterNumbers !== []) {
+            $semesterPlaceholders = [];
+            foreach ($semesterNumbers as $index => $semesterNumber) {
+                $key = 'semester_number_' . $index;
+                $semesterPlaceholders[] = ':' . $key;
+                $bind[$key] = $semesterNumber;
+            }
+            $filters[] = 'EXISTS (
+                SELECT 1
+                FROM student_semester ss_filter
+                JOIN semesters se_filter ON se_filter.id = ss_filter.semester_id
+                WHERE ss_filter.student_id = s.id
+                  AND se_filter.number IN (' . implode(',', $semesterPlaceholders) . ')
+            )';
+        }
+        if (in_array($level, ['moteseta', 'ebtedai'], true) && $periodNumbers !== []) {
+            $periodPlaceholders = [];
+            foreach ($periodNumbers as $index => $periodNumber) {
+                $key = 'period_number_' . $index;
+                $periodPlaceholders[] = ':' . $key;
+                $bind[$key] = $periodNumber;
+            }
+            $filters[] = 'EXISTS (
+                SELECT 1
+                FROM student_period sp_filter
+                JOIN course_periods cp_filter ON cp_filter.id = sp_filter.period_id
+                WHERE sp_filter.student_id = s.id
+                  AND cp_filter.number IN (' . implode(',', $periodPlaceholders) . ')
+            )';
+        }
 
         $where = $filters ? 'WHERE ' . implode(' AND ', $filters) : '';
 
@@ -66,7 +102,7 @@ final class StudentsController extends Controller
 
         $offset = ($page - 1) * $pageSize;
 
-        $sql = "SELECT s.*, lvl.name AS level_name, sc.name AS class_name,
+        $sql = "SELECT s.*, lvl.name AS level_name, lvl.code AS level_code, sc.name AS class_name,
                 (
                     SELECT GROUP_CONCAT(se.number ORDER BY se.number SEPARATOR ' ')
                     FROM student_semester ss
@@ -113,6 +149,8 @@ final class StudentsController extends Controller
             'q' => $q,
             'level' => $level,
             'year' => $year,
+            'semesterNumbers' => $semesterNumbers,
+            'periodNumbers' => $periodNumbers,
             'allowedSizes' => $allowedSizes,
         ]);
     }
@@ -744,6 +782,26 @@ final class StudentsController extends Controller
         }
 
         return $map;
+    }
+
+    /**
+     * @return array<int>
+     */
+    private function normalizeIntSelections(mixed $raw, int $min, int $max): array
+    {
+        $items = is_array($raw) ? $raw : [$raw];
+        $selectedMap = [];
+        foreach ($items as $item) {
+            $value = (int) $item;
+            if ($value < $min || $value > $max) {
+                continue;
+            }
+            $selectedMap[$value] = true;
+        }
+
+        $selected = array_map('intval', array_keys($selectedMap));
+        sort($selected);
+        return $selected;
     }
 
     private function studentGradeRows(array $student): array

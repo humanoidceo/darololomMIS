@@ -9,12 +9,32 @@ $selectedYear = (int) ($year ?? 0);
 if ($selectedYear < 1350 || $selectedYear > 1500) {
     $selectedYear = 0;
 }
+$selectedSemesterNumbers = array_values(array_filter(
+    array_map('intval', (array) ($semesterNumbers ?? [])),
+    static fn (int $value): bool => in_array($value, [13, 14], true)
+));
+sort($selectedSemesterNumbers);
+$selectedPeriodNumbers = array_values(array_filter(
+    array_map('intval', (array) ($periodNumbers ?? [])),
+    static fn (int $value): bool => $value >= 1 && $value <= 6
+));
+sort($selectedPeriodNumbers);
 $selectedYearLabel = $selectedYear > 0 ? to_persian_number((string) $selectedYear) : 'انتخاب سال شمولیت';
-$returnTo = '/students?level=' . urlencode((string) $level)
-    . '&year=' . urlencode($selectedYear > 0 ? (string) $selectedYear : '')
-    . '&q=' . urlencode((string) $q)
-    . '&page_size=' . (int) $pageSize
-    . '&page=' . (int) $page;
+$baseFilterQuery = [
+    'level' => (string) $level,
+    'year' => $selectedYear > 0 ? (string) $selectedYear : '',
+    'q' => (string) $q,
+    'page_size' => (int) $pageSize,
+];
+if ((string) $level === 'aali' && $selectedSemesterNumbers !== []) {
+    $baseFilterQuery['semester'] = $selectedSemesterNumbers;
+}
+if ((string) $level !== 'aali' && $selectedPeriodNumbers !== []) {
+    $baseFilterQuery['period'] = $selectedPeriodNumbers;
+}
+$returnToQuery = $baseFilterQuery;
+$returnToQuery['page'] = (int) $page;
+$returnTo = '/students?' . http_build_query($returnToQuery);
 ?>
 
 <div class="section-title">
@@ -41,6 +61,31 @@ $returnTo = '/students?level=' . urlencode((string) $level)
                 <input type="text" id="studentFilterYearSearch" class="form-control" placeholder="جستجوی سال..." autocomplete="off">
                 <div class="student-year-list" id="studentFilterYearList" role="listbox"></div>
                 <div class="student-year-status" id="studentFilterYearStatus"></div>
+            </div>
+        </div>
+
+        <div class="student-term-filter <?= $selectedYear > 0 ? '' : 'is-disabled' ?>" id="studentTermFilter">
+            <div class="student-term-title" id="studentTermFilterTitle"><?= (string) $level === 'aali' ? 'صنف (چند انتخابی)' : 'دوره (چند انتخابی)' ?></div>
+            <div class="student-term-help" id="studentTermFilterHelp" <?= $selectedYear > 0 ? 'hidden' : '' ?>>ابتدا سال شمولیت را انتخاب کنید.</div>
+
+            <div class="student-term-options" id="studentSemesterFilterGroup" <?= (string) $level === 'aali' ? '' : 'hidden' ?>>
+                <label class="student-term-option">
+                    <input type="checkbox" name="semester[]" value="13" <?= in_array(13, $selectedSemesterNumbers, true) ? 'checked' : '' ?> <?= $selectedYear > 0 ? '' : 'disabled' ?>>
+                    صنف <?= e(to_persian_number('13')) ?>
+                </label>
+                <label class="student-term-option">
+                    <input type="checkbox" name="semester[]" value="14" <?= in_array(14, $selectedSemesterNumbers, true) ? 'checked' : '' ?> <?= $selectedYear > 0 ? '' : 'disabled' ?>>
+                    صنف <?= e(to_persian_number('14')) ?>
+                </label>
+            </div>
+
+            <div class="student-term-options" id="studentPeriodFilterGroup" <?= (string) $level !== 'aali' ? '' : 'hidden' ?>>
+                <?php for ($periodNumber = 1; $periodNumber <= 6; $periodNumber++): ?>
+                    <label class="student-term-option">
+                        <input type="checkbox" name="period[]" value="<?= e((string) $periodNumber) ?>" <?= in_array($periodNumber, $selectedPeriodNumbers, true) ? 'checked' : '' ?> <?= $selectedYear > 0 ? '' : 'disabled' ?>>
+                        دوره <?= e(to_persian_number((string) $periodNumber)) ?>
+                    </label>
+                <?php endfor; ?>
             </div>
         </div>
 
@@ -75,6 +120,11 @@ $returnTo = '/students?level=' . urlencode((string) $level)
     var yearSearch = document.getElementById('studentFilterYearSearch');
     var yearList = document.getElementById('studentFilterYearList');
     var yearStatus = document.getElementById('studentFilterYearStatus');
+    var termFilter = document.getElementById('studentTermFilter');
+    var termTitle = document.getElementById('studentTermFilterTitle');
+    var termHelp = document.getElementById('studentTermFilterHelp');
+    var semesterGroup = document.getElementById('studentSemesterFilterGroup');
+    var periodGroup = document.getElementById('studentPeriodFilterGroup');
 
     var allYears = [];
     for (var year = 1500; year >= 1350; year -= 1) {
@@ -137,6 +187,51 @@ $returnTo = '/students?level=' . urlencode((string) $level)
         }
     }
 
+    function clearGroupSelections(group) {
+        if (!group) {
+            return;
+        }
+        var inputs = group.querySelectorAll('input[type="checkbox"]');
+        for (var i = 0; i < inputs.length; i += 1) {
+            inputs[i].checked = false;
+        }
+    }
+
+    function setGroupDisabled(group, disabled) {
+        if (!group) {
+            return;
+        }
+        var inputs = group.querySelectorAll('input[type="checkbox"]');
+        for (var i = 0; i < inputs.length; i += 1) {
+            inputs[i].disabled = disabled;
+        }
+    }
+
+    function refreshTermFilter() {
+        var currentLevel = levelInput ? levelInput.value : 'aali';
+        var isAali = currentLevel === 'aali';
+        var hasYear = selectedYear() > 0;
+
+        if (termTitle) {
+            termTitle.textContent = isAali ? 'صنف (چند انتخابی)' : 'دوره (چند انتخابی)';
+        }
+        if (semesterGroup) {
+            semesterGroup.hidden = !isAali;
+        }
+        if (periodGroup) {
+            periodGroup.hidden = isAali;
+        }
+        if (termFilter) {
+            termFilter.classList.toggle('is-disabled', !hasYear);
+        }
+        if (termHelp) {
+            termHelp.hidden = hasYear;
+        }
+
+        setGroupDisabled(semesterGroup, !hasYear || !isAali);
+        setGroupDisabled(periodGroup, !hasYear || isAali);
+    }
+
     function filteredYears() {
         if (!state.query) {
             return allYears.slice();
@@ -180,7 +275,10 @@ $returnTo = '/students?level=' . urlencode((string) $level)
             if (yearInput) {
                 yearInput.value = '';
             }
+            clearGroupSelections(semesterGroup);
+            clearGroupSelections(periodGroup);
             updateYearTriggerText();
+            refreshTermFilter();
             closeYearDropdown();
             form.submit();
         });
@@ -262,6 +360,12 @@ $returnTo = '/students?level=' . urlencode((string) $level)
                     levelInput.value = button.getAttribute('data-level') || 'aali';
                 }
                 refreshLevelChips();
+                if ((levelInput ? levelInput.value : 'aali') === 'aali') {
+                    clearGroupSelections(periodGroup);
+                } else {
+                    clearGroupSelections(semesterGroup);
+                }
+                refreshTermFilter();
 
                 if (selectedYear() > 0) {
                     form.submit();
@@ -326,6 +430,7 @@ $returnTo = '/students?level=' . urlencode((string) $level)
 
     updateYearTriggerText();
     refreshLevelChips();
+    refreshTermFilter();
 })();
 </script>
 
@@ -367,12 +472,18 @@ $returnTo = '/students?level=' . urlencode((string) $level)
                     </td>
                     <td><?= e($student['class_name'] ?: '—') ?></td>
                     <td>
-                        <?php if (!empty($student['semesters_display'])): ?>
-                             <?= e($student['semesters_display']) ?>
-                        <?php elseif (!empty($student['periods_display'])): ?>
-                            دوره: <?= e($student['periods_display']) ?>
+                        <?php if ((string) ($student['level_code'] ?? '') === 'aali'): ?>
+                            <?php if (!empty($student['semesters_display'])): ?>
+                                 <?= e($student['semesters_display']) ?>
+                            <?php else: ?>
+                                —
+                            <?php endif; ?>
                         <?php else: ?>
-                            —
+                            <?php if (!empty($student['periods_display'])): ?>
+                                دوره: <?= e($student['periods_display']) ?>
+                            <?php else: ?>
+                                —
+                            <?php endif; ?>
                         <?php endif; ?>
                     </td>
                     <td><?= e((string) ($student['merit_count'] ?? 0)) ?></td>
@@ -420,10 +531,18 @@ $returnTo = '/students?level=' . urlencode((string) $level)
             <span>صفحه <?= e((string) $page) ?> از <?= e((string) $totalPages) ?></span>
             <div>
                 <?php if ($page > 1): ?>
-                    <a class="btn btn-default btn-sm" href="<?= e(url('/students?level=' . urlencode((string) $level) . '&year=' . urlencode($selectedYear > 0 ? (string) $selectedYear : '') . '&q=' . urlencode((string) $q) . '&page_size=' . $pageSize . '&page=' . ($page - 1))) ?>">قبلی</a>
+                    <?php
+                    $prevQuery = $baseFilterQuery;
+                    $prevQuery['page'] = $page - 1;
+                    ?>
+                    <a class="btn btn-default btn-sm" href="<?= e(url('/students?' . http_build_query($prevQuery))) ?>">قبلی</a>
                 <?php endif; ?>
                 <?php if ($page < $totalPages): ?>
-                    <a class="btn btn-default btn-sm" href="<?= e(url('/students?level=' . urlencode((string) $level) . '&year=' . urlencode($selectedYear > 0 ? (string) $selectedYear : '') . '&q=' . urlencode((string) $q) . '&page_size=' . $pageSize . '&page=' . ($page + 1))) ?>">بعدی</a>
+                    <?php
+                    $nextQuery = $baseFilterQuery;
+                    $nextQuery['page'] = $page + 1;
+                    ?>
+                    <a class="btn btn-default btn-sm" href="<?= e(url('/students?' . http_build_query($nextQuery))) ?>">بعدی</a>
                 <?php endif; ?>
             </div>
         </div>

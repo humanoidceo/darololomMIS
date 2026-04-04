@@ -39,15 +39,27 @@ $isTeacherRole = $currentRole === 'teacher';
         <div class="container">
             <div class="row">
                 <div class="col-md-8 col-sm-7 site-header-meta">
-                    <span class="phone-icon"><i class="fa fa-phone"></i> شماره تماس: 0700-000000</span>
-                    <span class="email-icon"><i class="fa fa-envelope-o"></i> ایمیل: <a href="mailto:info@darololom.local">info@darololom.local</a></span>
+                    <div class="site-contact-card phone-icon">
+                        <i class="fa fa-phone"></i>
+                        <div class="site-contact-text">
+                            <span class="site-contact-label">شماره تماس</span>
+                            <span class="site-contact-value">0700-000000</span>
+                        </div>
+                    </div>
+                    <div class="site-contact-card email-icon">
+                        <i class="fa fa-envelope-o"></i>
+                        <div class="site-contact-text">
+                            <span class="site-contact-label">ایمیل</span>
+                            <a class="site-contact-value" href="mailto:info@darololom.local">info@darololom.local</a>
+                        </div>
+                    </div>
                 </div>
                 <div class="col-md-4 col-sm-5 site-header-intro">
                     <div class="site-header-brand">
                         <span class="site-header-logo-wrap">
                             <img src="<?= e(url('/assets/images/logo.jpg')) ?>" alt="لوگوی دارالعلوم" class="site-header-logo" onerror="this.style.display='none';">
                         </span>
-                        <p>سیستم مدیریت دارالعلوم عالی الحاج سید منصور نادری</p>
+                        <p>دارالعلوم عالی الحاج سید منصور نادری</p>
                     </div>
                 </div>
             </div>
@@ -62,10 +74,6 @@ $isTeacherRole = $currentRole === 'teacher';
                     <span class="icon icon-bar"></span>
                     <span class="icon icon-bar"></span>
                 </button>
-                <a href="<?= e(url('/')) ?>" class="navbar-brand">
-                    <img src="<?= e(url('/assets/images/logo.jpg')) ?>" alt="لوگو" class="navbar-brand-logo" onerror="this.style.display='none';">
-                    DarolOlom MIS
-                </a>
             </div>
             <div class="collapse navbar-collapse">
                 <ul class="nav navbar-nav navbar-right">
@@ -126,13 +134,13 @@ $isTeacherRole = $currentRole === 'teacher';
             <div class="row">
                 <div class="col-md-8 col-sm-6">
                     <div class="footer-thumb">
-                        <h4 class="wow fadeInUp" data-wow-delay="0.4s">سیستم مدیریت دارالعلوم  عالی الحاج سید منصور نادری</h4>
-                        <p>این سیستم برای مدیریت یک‌پارچه دانش‌آموزان، استادان، صنوف، مضامین، نمرات، قراردادها و گزارش‌های آموزشی دارالعلوم طراحی شده است.</p>
-                    </div>
+                        <h4 class="wow fadeInUp" data-wow-delay="0.4s">دارالعلوم  عالی الحاج سید منصور نادری</h4>
+                    <p>
+                        جوار مسجد الحاج سید منصور نادری، چهارراهی پروژه تایمنی، کابل، افغانستان
+                    </p> </div>
                 </div>
                 <div class="col-md-4 col-sm-6">
                     <div class="footer-thumb">
-                        <h4 class="wow fadeInUp" data-wow-delay="0.4s">دسترسی سریع</h4>
                         <ul class="footer-links">
                             <?php if ($isStudentRole): ?>
                                 <li><a href="<?= e(url('/account')) ?>">مشاهده مشخصات من</a></li>
@@ -145,6 +153,7 @@ $isTeacherRole = $currentRole === 'teacher';
                                 <li><a href="<?= e(url('/teachers')) ?>">مدیریت استادان</a></li>
                             <?php endif; ?>
                         </ul>
+
                         <p class="footer-copy">© <?= date('Y') ?> دارالعلوم عالی الحاج سید منصور نادری - همه حقوق محفوظ است.</p>
                     </div>
                 </div>

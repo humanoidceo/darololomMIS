@@ -37,31 +37,20 @@ $isTeacherRole = $currentRole === 'teacher';
 
     <header class="site-header">
         <div class="container">
-            <div class="row">
-                <div class="col-md-8 col-sm-7 site-header-meta">
-                    <div class="site-contact-card phone-icon">
-                        <i class="fa fa-phone"></i>
-                        <div class="site-contact-text">
-                            <span class="site-contact-label">شماره تماس</span>
-                            <span class="site-contact-value">0700-000000</span>
-                        </div>
-                    </div>
-                    <div class="site-contact-card email-icon">
-                        <i class="fa fa-envelope-o"></i>
-                        <div class="site-contact-text">
-                            <span class="site-contact-label">ایمیل</span>
-                            <a class="site-contact-value" href="mailto:info@darololom.local">info@darololom.local</a>
-                        </div>
-                    </div>
+            <div class="site-header-main">
+                <div class="site-header-brand">
+                    <span class="site-header-logo-wrap">
+                        <img src="<?= e(url('/assets/images/logo.jpg')) ?>" alt="لوگوی دارالعلوم" class="site-header-logo" onerror="this.style.display='none';">
+                    </span>
+                    <p>دارالعلوم عالی الحاج سید منصور نادری</p>
+                    <nav class="site-header-quick-nav" aria-label="گزینه‌های هدر">
+                        <a href="<?= e(url('/')) ?>">خانه</a>
+                        <a href="#articles">مقالات</a>
+                        <a href="#about-us">درباره ما</a>
+                        <a href="#contact-us">تماس با ما</a>
+                    </nav>
                 </div>
-                <div class="col-md-4 col-sm-5 site-header-intro">
-                    <div class="site-header-brand">
-                        <span class="site-header-logo-wrap">
-                            <img src="<?= e(url('/assets/images/logo.jpg')) ?>" alt="لوگوی دارالعلوم" class="site-header-logo" onerror="this.style.display='none';">
-                        </span>
-                        <p>دارالعلوم عالی الحاج سید منصور نادری</p>
-                    </div>
-                </div>
+                    
             </div>
         </div>
     </header>

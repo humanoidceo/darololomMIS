@@ -22,7 +22,6 @@ return static function (Router $router): void {
     $router->post('/students/store', 'StudentsController@store');
     $router->get('/students/{id}/edit', 'StudentsController@edit');
     $router->post('/students/{id}/update', 'StudentsController@update');
-    $router->post('/students/{id}/delete', 'StudentsController@destroy');
     $router->post('/students/{id}/behavior', 'StudentsController@addBehavior');
     $router->post('/students/behavior/{id}/delete', 'StudentsController@deleteBehavior');
     $router->get('/students/{id}/results', 'StudentsController@results');

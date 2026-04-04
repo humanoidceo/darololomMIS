@@ -346,26 +346,6 @@ final class StudentsController extends Controller
         $this->redirect('/students');
     }
 
-    public function destroy(array $params = []): void
-    {
-        $this->authorize('manage_students', 'شما اجازه حذف شاگردان را ندارید.', '/students');
-        $this->csrfCheck();
-        $id = $this->intParam($params, 'id');
-
-        $db = Database::connection();
-        $db->prepare('DELETE FROM users WHERE role = :role AND student_id = :student_id')
-            ->execute([
-                'role' => 'student',
-                'student_id' => $id,
-            ]);
-
-        $stmt = $db->prepare('DELETE FROM students WHERE id = :id');
-        $stmt->execute(['id' => $id]);
-
-        flash('success', 'دانش‌آموز حذف شد.');
-        $this->redirect('/students');
-    }
-
     public function addBehavior(array $params = []): void
     {
         $this->authorize('manage_students', 'شما اجازه ثبت رفتار برای شاگردان را ندارید.', '/students');

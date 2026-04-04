@@ -533,12 +533,6 @@ $returnTo = '/students?' . http_build_query($returnToQuery);
                             <a class="btn btn-xs btn-primary" href="<?= e(url('/students/' . $student['id'] . '/appreciation')) ?>" target="_blank">تقدیرنامه</a>
                         <?php endif; ?>
                         <a class="btn btn-xs btn-default" href="<?= e(url('/students/' . $student['id'] . '/id-card')) ?>" target="_blank">ای‌دی کارت</a>
-                        <?php if (can('manage_students')): ?>
-                            <form method="post" action="<?= e(url('/students/' . $student['id'] . '/delete')) ?>" onsubmit="return confirm('آیا مطمئن هستید؟');">
-                                <?= csrf_field() ?>
-                                <button class="btn btn-xs btn-danger" type="submit">حذف</button>
-                            </form>
-                        <?php endif; ?>
                     </td>
                 </tr>
             <?php endforeach; ?>

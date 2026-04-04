@@ -144,7 +144,7 @@ function permission_definitions(): array
     return [
         'access_students' => 'دسترسی به بخش شاگردان',
         'register_students' => 'ثبت شاگردان',
-        'manage_students' => 'ویرایش/حذف شاگردان',
+        'manage_students' => 'مدیریت شاگردان',
         'access_teachers' => 'دسترسی به بخش اساتید',
         'register_teachers' => 'ثبت اساتید',
         'manage_teachers' => 'ویرایش/حذف اساتید',

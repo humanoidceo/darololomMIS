@@ -1,1 +1,238 @@
-/* module styles for grades */
+.teacher-grade-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 18px;
+}
+
+.teacher-grade-title {
+    margin: 0 0 6px;
+    font-size: 26px;
+    color: #17324d;
+}
+
+.teacher-grade-lead {
+    margin: 0;
+    color: #5b7086;
+    font-size: 14px;
+    line-height: 1.8;
+}
+
+.teacher-grade-summary {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.teacher-grade-summary-item {
+    display: inline-flex;
+    align-items: center;
+    min-height: 38px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: #eef6ff;
+    border: 1px solid #d7e7fb;
+    color: #24527a;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.teacher-subject-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 22px;
+}
+
+.teacher-subject-card {
+    position: relative;
+    display: block;
+    padding: 18px;
+    border-radius: 18px;
+    text-decoration: none;
+    background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+    border: 1px solid #d7e5f4;
+    box-shadow: 0 14px 34px rgba(22, 58, 95, 0.08);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.teacher-subject-card:hover,
+.teacher-subject-card:focus {
+    text-decoration: none;
+    transform: translateY(-3px);
+    box-shadow: 0 20px 36px rgba(22, 58, 95, 0.14);
+    border-color: #93c5fd;
+}
+
+.teacher-subject-card.is-active {
+    background: linear-gradient(135deg, #1f5f93 0%, #2f7ab6 100%);
+    border-color: #1f5f93;
+    box-shadow: 0 20px 40px rgba(31, 95, 147, 0.25);
+}
+
+.teacher-subject-card.is-active .teacher-subject-name,
+.teacher-subject-card.is-active .teacher-subject-link,
+.teacher-subject-card.is-active .teacher-subject-term {
+    color: #ffffff;
+}
+
+.teacher-subject-card.is-active .teacher-subject-pill {
+    background: rgba(255, 255, 255, 0.18);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.26);
+}
+
+.teacher-subject-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.teacher-subject-pill {
+    display: inline-flex;
+    align-items: center;
+    min-height: 30px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: #edf7ef;
+    border: 1px solid #cae7d0;
+    color: #22603a;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.teacher-subject-term {
+    color: #58718a;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.teacher-subject-name {
+    margin: 0 0 12px;
+    color: #17324d;
+    font-size: 21px;
+    line-height: 1.5;
+    font-weight: 800;
+}
+
+.teacher-subject-link {
+    margin: 0;
+    color: #2d6797;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.teacher-grade-empty {
+    padding: 18px 20px;
+    border-radius: 16px;
+    background: #fff7e8;
+    border: 1px solid #f2ddb0;
+    color: #865d16;
+    font-size: 14px;
+    line-height: 1.8;
+    margin-bottom: 20px;
+}
+
+.teacher-grade-empty-soft {
+    background: #f7fbff;
+    border-color: #d9e7f6;
+    color: #4d6782;
+}
+
+.teacher-grade-panel {
+    padding: 22px;
+    border-radius: 20px;
+    background: #ffffff;
+    border: 1px solid #dbe6f2;
+    box-shadow: 0 16px 36px rgba(15, 23, 42, 0.08);
+}
+
+.teacher-grade-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.teacher-grade-panel-title {
+    margin: 0 0 4px;
+    color: #17324d;
+    font-size: 24px;
+    font-weight: 800;
+}
+
+.teacher-grade-panel-subtitle {
+    margin: 0;
+    color: #5f7487;
+    font-size: 13px;
+}
+
+.teacher-grade-panel-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 110px;
+    min-height: 48px;
+    padding: 8px 16px;
+    border-radius: 14px;
+    background: #eff8f2;
+    border: 1px solid #d0ead6;
+    color: #26623d;
+    font-weight: 800;
+    font-size: 14px;
+}
+
+.teacher-grade-form {
+    margin-top: 4px;
+}
+
+.teacher-grade-table th,
+.teacher-grade-table td {
+    vertical-align: middle !important;
+}
+
+.teacher-grade-table td:first-child {
+    font-weight: 700;
+    color: #17324d;
+}
+
+.teacher-grade-table td:nth-child(2) {
+    color: #5f7487;
+}
+
+.teacher-grade-table input.form-control {
+    min-width: 110px;
+    text-align: center;
+    font-weight: 700;
+}
+
+@media (max-width: 991px) {
+    .teacher-grade-header,
+    .teacher-grade-panel-head {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .teacher-grade-summary {
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 767px) {
+    .teacher-subject-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .teacher-grade-panel {
+        padding: 16px;
+    }
+
+    .teacher-grade-table input.form-control {
+        min-width: 84px;
+    }
+}

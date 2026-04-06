@@ -24,63 +24,49 @@ final class GradesController extends Controller
 
             $db = Database::connection();
             $assignment = $this->teacherAssignmentData($teacherId);
-            $students = [];
+            $selectedSubject = null;
+            $subjectStudents = [];
+            $subjectScoreMap = [];
 
-            if ($assignment['class_ids'] !== []) {
-                $placeholders = implode(',', array_fill(0, count($assignment['class_ids']), '?'));
-                $studentsStmt = $db->prepare(
-                    "SELECT s.id, s.name
-                     FROM students s
-                     WHERE s.school_class_id IN ($placeholders)
-                     ORDER BY s.name"
-                );
-                $studentsStmt->execute($assignment['class_ids']);
-                $students = $studentsStmt->fetchAll();
+            $requestedSubjectId = (int) ($_GET['subject_id'] ?? 0);
+            if ($requestedSubjectId > 0) {
+                $selectedSubject = $this->teacherAssignedSubject($assignment['subjects'], $requestedSubjectId);
             }
 
-            $allowedStudentIds = array_map(static fn (array $row): int => (int) $row['id'], $students);
-            $requestedStudentId = (int) ($_GET['student_id'] ?? 0);
-            $studentId = in_array($requestedStudentId, $allowedStudentIds, true)
-                ? $requestedStudentId
-                : (int) ($students[0]['id'] ?? 0);
+            if ($selectedSubject) {
+                $subjectStudents = $this->studentsForTeacherSubject($assignment, $selectedSubject);
 
-            $selectedStudent = null;
-            $subjects = [];
-            $scoreMap = [];
+                if ($subjectStudents !== []) {
+                    $studentIds = array_map(static fn (array $row): int => (int) ($row['id'] ?? 0), $subjectStudents);
+                    $studentIds = array_values(array_filter($studentIds, static fn (int $id): bool => $id > 0));
 
-            if ($studentId > 0) {
-                $selectedStudent = $this->studentProfile($studentId);
-                if ($selectedStudent && in_array((int) ($selectedStudent['school_class_id'] ?? 0), $assignment['class_ids'], true)) {
-                    $available = $this->availableSubjectsForStudent($selectedStudent);
-                    $subjects = $this->filterSubjectsByAllowedIds($available, $assignment['subject_ids']);
-
-                    if ($subjects !== []) {
-                        $subjectIds = array_map(static fn (array $row): int => (int) $row['id'], $subjects);
-                        $scorePlaceholders = implode(',', array_fill(0, count($subjectIds), '?'));
+                    if ($studentIds !== []) {
+                        $placeholders = implode(',', array_fill(0, count($studentIds), '?'));
                         $scoresStmt = $db->prepare(
-                            "SELECT subject_id, score
+                            "SELECT student_id, score
                              FROM student_scores
-                             WHERE student_id = ?
-                             AND subject_id IN ($scorePlaceholders)"
+                             WHERE subject_id = ?
+                               AND student_id IN ($placeholders)"
                         );
-                        $scoresStmt->execute(array_merge([$studentId], $subjectIds));
+                        $scoresStmt->execute(array_merge([(int) $selectedSubject['id']], $studentIds));
                         foreach ($scoresStmt->fetchAll() as $row) {
-                            $scoreMap[(int) $row['subject_id']] = $row['score'];
+                            $subjectScoreMap[(int) ($row['student_id'] ?? 0)] = $row['score'];
                         }
                     }
-                } else {
-                    $selectedStudent = null;
                 }
             }
 
             $this->render('grades/index', [
-                'title' => 'ثبت نمرات صنوف من',
+                'title' => 'ثبت نمرات مضامین من',
                 'mode' => 'teacher',
-                'students' => $students,
-                'selectedStudent' => $selectedStudent,
-                'subjects' => $subjects,
-                'scoreMap' => $scoreMap,
+                'students' => [],
+                'selectedStudent' => null,
+                'subjects' => [],
+                'scoreMap' => [],
                 'assignment' => $assignment,
+                'selectedSubject' => $selectedSubject,
+                'subjectStudents' => $subjectStudents,
+                'subjectScoreMap' => $subjectScoreMap,
             ]);
             return;
         }
@@ -128,6 +114,12 @@ final class GradesController extends Controller
             $this->authorize('manage_grades', 'شما اجازه ثبت نمرات را ندارید.', '/');
         }
         $this->csrfCheck();
+
+        if ($role === 'teacher' && array_key_exists('subject_id', $_POST) && is_array($_POST['student_scores'] ?? null)) {
+            $this->storeTeacherSubjectScores($user);
+            return;
+        }
+
         $db = Database::connection();
 
         $studentId = (int) ($_POST['student_id'] ?? 0);
@@ -451,14 +443,22 @@ final class GradesController extends Controller
         $classes = $classesStmt->fetchAll();
 
         $subjectsStmt = $db->prepare(
-            'SELECT s.id, s.name
+            'SELECT s.id, s.name, s.level_id, s.semester, s.period_id,
+                    l.name AS level_name, l.code AS level_code, cp.number AS period_number
              FROM teacher_subject ts
              JOIN subjects s ON s.id = ts.subject_id
+             LEFT JOIN study_levels l ON l.id = s.level_id
+             LEFT JOIN course_periods cp ON cp.id = s.period_id
              WHERE ts.teacher_id = :teacher_id
              ORDER BY s.name'
         );
         $subjectsStmt->execute(['teacher_id' => $teacherId]);
         $subjects = $subjectsStmt->fetchAll();
+
+        foreach ($subjects as &$subject) {
+            $subject['term_label'] = $this->subjectTermLabel($subject);
+        }
+        unset($subject);
 
         return [
             'classes' => $classes,
@@ -488,6 +488,79 @@ final class GradesController extends Controller
         }
 
         return $filtered;
+    }
+
+    private function teacherAssignedSubject(array $subjects, int $subjectId): ?array
+    {
+        foreach ($subjects as $subject) {
+            if ((int) ($subject['id'] ?? 0) === $subjectId) {
+                return $subject;
+            }
+        }
+
+        return null;
+    }
+
+    private function subjectTermLabel(array $subject): string
+    {
+        $levelCode = (string) ($subject['level_code'] ?? '');
+        if ($levelCode === 'aali') {
+            $termOrder = $this->normalizeAaliTermOrder((int) ($subject['semester'] ?? 0));
+            return $termOrder > 0 ? ('سمستر ' . (string) $termOrder) : 'سمستر —';
+        }
+
+        $periodNumber = (int) ($subject['period_number'] ?? 0);
+        return $periodNumber > 0 ? ('دوره ' . (string) $periodNumber) : 'دوره —';
+    }
+
+    private function studentsForTeacherSubject(array $assignment, array $subject): array
+    {
+        $subjectId = (int) ($subject['id'] ?? 0);
+        $levelId = (int) ($subject['level_id'] ?? 0);
+        if ($subjectId <= 0 || $levelId <= 0) {
+            return [];
+        }
+
+        $db = Database::connection();
+        $sql = 'SELECT s.id, s.name, s.school_class_id, sc.name AS class_name, s.level_id, l.code AS level_code
+            FROM students s
+            LEFT JOIN school_classes sc ON sc.id = s.school_class_id
+            LEFT JOIN study_levels l ON l.id = s.level_id
+            WHERE s.level_id = ?';
+        $params = [$levelId];
+
+        if (($assignment['class_ids'] ?? []) !== []) {
+            $classIds = array_values(array_filter(
+                array_map('intval', (array) ($assignment['class_ids'] ?? [])),
+                static fn (int $id): bool => $id > 0
+            ));
+            if ($classIds === []) {
+                return [];
+            }
+
+            $placeholders = implode(',', array_fill(0, count($classIds), '?'));
+            $sql .= " AND s.school_class_id IN ($placeholders)";
+            $params = array_merge($params, $classIds);
+        }
+
+        $sql .= ' ORDER BY s.name';
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        $candidates = $stmt->fetchAll();
+
+        $students = [];
+        foreach ($candidates as $candidate) {
+            $availableSubjects = $this->availableSubjectsForStudent($candidate);
+            foreach ($availableSubjects as $availableSubject) {
+                if ((int) ($availableSubject['id'] ?? 0) === $subjectId) {
+                    $students[] = $candidate;
+                    break;
+                }
+            }
+        }
+
+        return $students;
     }
 
     private function allModalSubjectsForStudent(array $student): array
@@ -1040,5 +1113,115 @@ final class GradesController extends Controller
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         exit;
+    }
+
+    private function storeTeacherSubjectScores(array $user): void
+    {
+        $teacherId = (int) ($user['teacher_id'] ?? 0);
+        if ($teacherId <= 0) {
+            flash('error', 'حساب استاد به پروفایل استاد متصل نیست.');
+            $this->redirect('/account');
+        }
+
+        $subjectId = (int) ($_POST['subject_id'] ?? 0);
+        if ($subjectId <= 0) {
+            flash('error', 'مضمون انتخاب نشده است.');
+            $this->redirect('/grades');
+        }
+
+        $assignment = $this->teacherAssignmentData($teacherId);
+        $selectedSubject = $this->teacherAssignedSubject($assignment['subjects'], $subjectId);
+        if (!$selectedSubject) {
+            flash('error', 'شما فقط می‌توانید نمرات مضامین اختصاص‌داده‌شده به خود را ثبت کنید.');
+            $this->redirect('/grades');
+        }
+
+        $allowedStudents = $this->studentsForTeacherSubject($assignment, $selectedSubject);
+        if ($allowedStudents === []) {
+            flash('error', 'برای این مضمون شاگرد قابل نمره‌دهی یافت نشد.');
+            $this->redirect('/grades?subject_id=' . $subjectId);
+        }
+
+        $allowedStudentIds = [];
+        foreach ($allowedStudents as $student) {
+            $studentId = (int) ($student['id'] ?? 0);
+            if ($studentId > 0) {
+                $allowedStudentIds[$studentId] = true;
+            }
+        }
+
+        $submittedScores = $_POST['student_scores'] ?? [];
+        if (!is_array($submittedScores)) {
+            $submittedScores = [];
+        }
+
+        $db = Database::connection();
+        $stmt = $db->prepare(
+            'INSERT INTO student_scores (student_id, subject_id, recorded_by_teacher_id, score, created_at, updated_at)
+             VALUES (:student_id, :subject_id, :recorded_by_teacher_id, :score, NOW(), NOW())
+             ON DUPLICATE KEY UPDATE
+             recorded_by_teacher_id = VALUES(recorded_by_teacher_id),
+             score = VALUES(score),
+             updated_at = NOW()'
+        );
+
+        $savedCount = 0;
+        $updatedStudentIds = [];
+
+        try {
+            if (!$db->inTransaction()) {
+                $db->beginTransaction();
+            }
+
+            foreach ($submittedScores as $studentIdRaw => $scoreRaw) {
+                $studentId = (int) $studentIdRaw;
+                if ($studentId <= 0 || !isset($allowedStudentIds[$studentId])) {
+                    continue;
+                }
+
+                $scoreText = trim((string) $scoreRaw);
+                if ($scoreText === '') {
+                    continue;
+                }
+
+                $stmt->execute([
+                    'student_id' => $studentId,
+                    'subject_id' => $subjectId,
+                    'recorded_by_teacher_id' => $teacherId,
+                    'score' => max(0, min(100, (int) $scoreText)),
+                ]);
+                $savedCount++;
+                $updatedStudentIds[$studentId] = true;
+            }
+
+            foreach (array_keys($updatedStudentIds) as $updatedStudentId) {
+                $student = $this->studentProfile((int) $updatedStudentId);
+                if (!$student) {
+                    continue;
+                }
+
+                $currentSubjects = $this->availableSubjectsForStudent($student);
+                $this->promoteStudentIfEligible($student, $currentSubjects);
+            }
+
+            if ($db->inTransaction()) {
+                $db->commit();
+            }
+        } catch (\Throwable $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+
+            flash('error', 'ذخیره نمرات ناموفق بود. لطفاً دوباره تلاش کنید.');
+            $this->redirect('/grades?subject_id=' . $subjectId);
+        }
+
+        if ($savedCount === 0) {
+            flash('error', 'هیچ نمره‌ای برای ذخیره وارد نشد.');
+            $this->redirect('/grades?subject_id=' . $subjectId);
+        }
+
+        flash('success', 'نمرات مضمون با موفقیت ذخیره شد.');
+        $this->redirect('/grades?subject_id=' . $subjectId);
     }
 }

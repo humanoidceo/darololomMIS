@@ -117,10 +117,6 @@ $semesterOrPeriod = trim((string) (($student['semesters_display'] ?? '') !== '' 
                 <div class="signature-line"></div>
                 <div class="signature-title">امضای آمر دارالعلوم</div>
             </div>
-            <div class="signature">
-                <div class="signature-line"></div>
-                <div class="signature-title">امضای مدیر دارالعلوم</div>
-            </div>
         </div>
     </div>
 </div>

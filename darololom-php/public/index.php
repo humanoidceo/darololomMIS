@@ -21,6 +21,11 @@ if ($scriptName !== '/' && str_starts_with($path, $scriptName)) {
 
 $path = rtrim($path, '/') ?: '/';
 
+if ($path === '/favicon.ico') {
+    http_response_code(204);
+    exit;
+}
+
 $publicRoutes = [
     'GET:/login',
     'POST:/login',

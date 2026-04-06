@@ -5,18 +5,44 @@
 <div class="news-thumb">
     <div class="news-info">
         <?php if (($mode ?? 'admin') === 'teacher'): ?>
+            <?php
+            $selectedSubjectId = (int) ($selectedSubject['id'] ?? 0);
+            $buildTeacherGradesUrl = static function (array $overrides = []) use ($teacherFilters, $selectedSubjectId): string {
+                $params = [
+                    'q' => (string) ($teacherFilters['q'] ?? ''),
+                    'year' => (int) ($teacherFilters['year'] ?? 0),
+                    'level' => (string) ($teacherFilters['level'] ?? ''),
+                    'class_id' => (int) ($teacherFilters['class_id'] ?? 0),
+                    'subject_id' => $selectedSubjectId,
+                    'page' => (int) ($teacherFilters['page'] ?? 1),
+                ];
+
+                foreach ($overrides as $key => $value) {
+                    $params[$key] = $value;
+                }
+
+                $query = [];
+                foreach ($params as $key => $value) {
+                    if ($value === '' || $value === 0 || $value === null) {
+                        continue;
+                    }
+                    if ($key === 'page' && (int) $value === 1) {
+                        continue;
+                    }
+                    $query[$key] = $value;
+                }
+
+                return url('/grades') . ($query !== [] ? ('?' . http_build_query($query)) : '');
+            };
+            ?>
             <div class="teacher-grade-header">
                 <div>
                     <h3 class="teacher-grade-title">مضامین من</h3>
                     <p class="teacher-grade-lead">روی هر کارت کلیک کنید تا شاگردان همان مضمون باز شوند و نمرات را ثبت و ذخیره نمایید.</p>
                 </div>
                 <div class="teacher-grade-summary">
-                    <?php if (($assignment['classes'] ?? []) === []): ?>
-                        <span class="teacher-grade-summary-item">بدون محدودیت صنف</span>
-                    <?php else: ?>
-                        <span class="teacher-grade-summary-item">صنوف اختصاص‌یافته: <?= e((string) count((array) ($assignment['classes'] ?? []))) ?></span>
-                    <?php endif; ?>
-                    <span class="teacher-grade-summary-item">مضامین اختصاص‌یافته: <?= e((string) count((array) ($assignment['subjects'] ?? []))) ?></span>
+                    <span class="teacher-grade-summary-item">کل مضامین: <?= e((string) count((array) ($assignment['subjects'] ?? []))) ?></span>
+                    <span class="teacher-grade-summary-item">نتیجه فیلتر: <?= e((string) ($subjectCardTotal ?? 0)) ?></span>
                 </div>
             </div>
 
@@ -25,19 +51,121 @@
                     هنوز هیچ مضمونی برای حساب شما اختصاص داده نشده است.
                 </div>
             <?php else: ?>
+                <form method="get" action="<?= e(url('/grades')) ?>" class="teacher-grade-toolbar">
+                    <?php if ($selectedSubjectId > 0): ?>
+                        <input type="hidden" name="subject_id" value="<?= e((string) $selectedSubjectId) ?>">
+                    <?php endif; ?>
+
+                    <div class="teacher-grade-filter teacher-grade-filter-search">
+                        <label for="teacher-grade-q">جستجوی مضمون</label>
+                        <input
+                            type="text"
+                            id="teacher-grade-q"
+                            name="q"
+                            class="form-control"
+                            value="<?= e((string) ($teacherFilters['q'] ?? '')) ?>"
+                            placeholder="نام مضمون، سطح یا سمستر/دوره"
+                        >
+                    </div>
+
+                    <div class="teacher-grade-filter">
+                        <label for="teacher-grade-year">سال</label>
+                        <select id="teacher-grade-year" name="year" class="form-control">
+                            <option value="">همه سال‌ها</option>
+                            <?php foreach (($teacherFilterOptions['years'] ?? []) as $yearOption): ?>
+                                <option value="<?= e((string) $yearOption) ?>" <?= (int) ($teacherFilters['year'] ?? 0) === (int) $yearOption ? 'selected' : '' ?>>
+                                    <?= e((string) $yearOption) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="teacher-grade-filter">
+                        <label for="teacher-grade-level">سطح تحصیلی</label>
+                        <select id="teacher-grade-level" name="level" class="form-control">
+                            <option value="">همه سطوح</option>
+                            <?php foreach (($teacherFilterOptions['levels'] ?? []) as $levelOption): ?>
+                                <option value="<?= e((string) ($levelOption['code'] ?? '')) ?>" <?= (string) ($teacherFilters['level'] ?? '') === (string) ($levelOption['code'] ?? '') ? 'selected' : '' ?>>
+                                    <?= e((string) ($levelOption['name'] ?? '—')) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="teacher-grade-filter">
+                        <label for="teacher-grade-class">صنف</label>
+                        <select id="teacher-grade-class" name="class_id" class="form-control">
+                            <option value="">همه صنوف</option>
+                            <?php foreach (($teacherFilterOptions['classes'] ?? []) as $classOption): ?>
+                                <option value="<?= e((string) ($classOption['id'] ?? 0)) ?>" <?= (int) ($teacherFilters['class_id'] ?? 0) === (int) ($classOption['id'] ?? 0) ? 'selected' : '' ?>>
+                                    <?= e((string) ($classOption['name'] ?? '—')) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="teacher-grade-toolbar-actions">
+                        <button type="submit" class="section-btn btn btn-default teacher-grade-apply">اعمال فیلتر</button>
+                        <a href="<?= e(url('/grades')) ?>" class="teacher-grade-reset">پاک‌کردن فیلترها</a>
+                    </div>
+                </form>
+
+                <?php if (($subjectCardTotal ?? 0) > 0): ?>
+                    <div class="teacher-grade-results-meta">
+                        نمایش <?= e((string) (($subjectPagination['from'] ?? 0))) ?> تا <?= e((string) (($subjectPagination['to'] ?? 0))) ?>
+                        از <?= e((string) (($subjectPagination['total_items'] ?? 0))) ?> مضمون
+                    </div>
+                <?php endif; ?>
+
+                <?php if (($subjectCardTotal ?? 0) === 0): ?>
+                    <div class="teacher-grade-empty teacher-grade-empty-soft">
+                        هیچ مضمونی با این معیارها پیدا نشد. فیلترها را تغییر دهید.
+                    </div>
+                <?php endif; ?>
+
                 <div class="teacher-subject-grid">
-                    <?php foreach (($assignment['subjects'] ?? []) as $subject): ?>
+                    <?php foreach (($subjectCards ?? []) as $subject): ?>
                         <?php $isActiveSubject = (int) (($selectedSubject['id'] ?? 0)) === (int) ($subject['id'] ?? 0); ?>
-                        <a href="<?= e(url('/grades?subject_id=' . (int) ($subject['id'] ?? 0))) ?>" class="teacher-subject-card<?= $isActiveSubject ? ' is-active' : '' ?>">
+                        <a href="<?= e($buildTeacherGradesUrl([
+                            'subject_id' => (int) ($subject['id'] ?? 0),
+                            'page' => (int) ($subjectPagination['current_page'] ?? 1),
+                        ])) ?>" class="teacher-subject-card<?= $isActiveSubject ? ' is-active' : '' ?>">
                             <div class="teacher-subject-card-top">
                                 <span class="teacher-subject-pill"><?= e((string) ($subject['level_name'] ?? 'مضمون')) ?></span>
                                 <span class="teacher-subject-term"><?= e((string) ($subject['term_label'] ?? '—')) ?></span>
                             </div>
                             <h4 class="teacher-subject-name"><?= e((string) ($subject['name'] ?? '—')) ?></h4>
-                            <p class="teacher-subject-link"><?= $isActiveSubject ? 'در حال نمره‌دهی' : 'مشاهده شاگردان و ثبت نمره' ?></p>
+                            <div class="teacher-subject-card-bottom">
+                                <span class="teacher-subject-count"><?= e((string) ((int) ($subject['student_count'] ?? 0))) ?> شاگرد</span>
+                                <p class="teacher-subject-link"><?= $isActiveSubject ? 'در حال نمره‌دهی' : 'مشاهده شاگردان و ثبت نمره' ?></p>
+                            </div>
                         </a>
                     <?php endforeach; ?>
                 </div>
+
+                <?php if ((int) (($subjectPagination['total_pages'] ?? 1)) > 1): ?>
+                    <?php
+                    $currentPage = (int) ($subjectPagination['current_page'] ?? 1);
+                    $totalPages = (int) ($subjectPagination['total_pages'] ?? 1);
+                    $startPage = max(1, $currentPage - 2);
+                    $endPage = min($totalPages, $currentPage + 2);
+                    ?>
+                    <div class="teacher-grade-pagination">
+                        <?php if ($currentPage > 1): ?>
+                            <a href="<?= e($buildTeacherGradesUrl(['page' => $currentPage - 1])) ?>" class="teacher-grade-page-link">قبلی</a>
+                        <?php endif; ?>
+
+                        <?php for ($page = $startPage; $page <= $endPage; $page++): ?>
+                            <a href="<?= e($buildTeacherGradesUrl(['page' => $page])) ?>" class="teacher-grade-page-link<?= $page === $currentPage ? ' is-active' : '' ?>">
+                                <?= e((string) $page) ?>
+                            </a>
+                        <?php endfor; ?>
+
+                        <?php if ($currentPage < $totalPages): ?>
+                            <a href="<?= e($buildTeacherGradesUrl(['page' => $currentPage + 1])) ?>" class="teacher-grade-page-link">بعدی</a>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
             <?php endif; ?>
 
             <?php if ($selectedSubject): ?>

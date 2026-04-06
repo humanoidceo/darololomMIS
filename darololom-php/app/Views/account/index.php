@@ -155,18 +155,7 @@ if (!in_array($activeTab, ['profile', 'grades'], true)) {
                     <p><strong>آدرس اصلی:</strong> <?= e((string) ($teacher['permanent_address'] ?? '—')) ?></p>
 
                     <hr>
-                    <h4>صنوف اختصاص‌داده‌شده</h4>
-                    <?php if (($teacherAssignments['classes'] ?? []) === []): ?>
-                        <p class="field-help">صنفی برای شما تخصیص نشده است.</p>
-                    <?php else: ?>
-                        <div class="inline-checks">
-                            <?php foreach ($teacherAssignments['classes'] as $class): ?>
-                                <label><?= e((string) $class['name']) ?></label>
-                            <?php endforeach; ?>
-                        </div>
-                    <?php endif; ?>
-
-                    <h4 style="margin-top:16px;">مضامین اختصاص‌داده‌شده</h4>
+                    <h4>مضامین اختصاص‌داده‌شده</h4>
                     <?php if (($teacherAssignments['subjects'] ?? []) === []): ?>
                         <p class="field-help">مضمونی برای شما تخصیص نشده است.</p>
                     <?php else: ?>
@@ -178,7 +167,7 @@ if (!in_array($activeTab, ['profile', 'grades'], true)) {
                     <?php endif; ?>
 
                     <div style="margin-top: 18px;">
-                        <a class="section-btn btn btn-default" href="<?= e(url('/grades')) ?>">ثبت/ویرایش نمرات صنوف من</a>
+                        <a class="section-btn btn btn-default" href="<?= e(url('/grades')) ?>">ثبت/ویرایش نمرات مضامین من</a>
                     </div>
                 <?php endif; ?>
             </div>

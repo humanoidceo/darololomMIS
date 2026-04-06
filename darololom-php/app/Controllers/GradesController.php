@@ -22,25 +22,55 @@ final class GradesController extends Controller
                 $this->redirect('/account');
             }
 
-            $db = Database::connection();
             $assignment = $this->teacherAssignmentData($teacherId);
+            $subjectRosterMap = $this->teacherSubjectRosterMap($assignment['subjects']);
+            $filterOptions = $this->teacherSubjectFilterOptions($assignment['subjects'], $subjectRosterMap);
+            $teacherFilters = $this->normalizeTeacherSubjectFilters($filterOptions);
+
+            $filteredSubjects = [];
+            foreach ($assignment['subjects'] as $subject) {
+                if (!$this->matchesTeacherSubjectFilters($subject, $teacherFilters)) {
+                    continue;
+                }
+
+                $subjectId = (int) ($subject['id'] ?? 0);
+                $filteredStudents = $this->filterTeacherRosterStudents($subjectRosterMap[$subjectId] ?? [], $teacherFilters);
+                $subject['student_count'] = count($filteredStudents);
+
+                if (($teacherFilters['year'] > 0 || $teacherFilters['class_id'] > 0) && $subject['student_count'] === 0) {
+                    continue;
+                }
+
+                $filteredSubjects[] = $subject;
+            }
+
+            $perPage = 10;
+            $totalFilteredSubjects = count($filteredSubjects);
+            $totalPages = max(1, (int) ceil($totalFilteredSubjects / $perPage));
+            $currentPage = min($teacherFilters['page'], $totalPages);
+            $offset = ($currentPage - 1) * $perPage;
+            $subjectCards = array_slice($filteredSubjects, $offset, $perPage);
             $selectedSubject = null;
             $subjectStudents = [];
             $subjectScoreMap = [];
 
             $requestedSubjectId = (int) ($_GET['subject_id'] ?? 0);
             if ($requestedSubjectId > 0) {
-                $selectedSubject = $this->teacherAssignedSubject($assignment['subjects'], $requestedSubjectId);
+                $selectedSubject = $this->teacherAssignedSubject($filteredSubjects, $requestedSubjectId);
             }
 
             if ($selectedSubject) {
-                $subjectStudents = $this->studentsForTeacherSubject($assignment, $selectedSubject);
+                $subjectStudents = $this->filterTeacherRosterStudents(
+                    $subjectRosterMap[(int) ($selectedSubject['id'] ?? 0)] ?? [],
+                    $teacherFilters
+                );
 
                 if ($subjectStudents !== []) {
                     $studentIds = array_map(static fn (array $row): int => (int) ($row['id'] ?? 0), $subjectStudents);
                     $studentIds = array_values(array_filter($studentIds, static fn (int $id): bool => $id > 0));
 
                     if ($studentIds !== []) {
+                        $db = Database::connection();
                         $placeholders = implode(',', array_fill(0, count($studentIds), '?'));
                         $scoresStmt = $db->prepare(
                             "SELECT student_id, score
@@ -64,6 +94,18 @@ final class GradesController extends Controller
                 'subjects' => [],
                 'scoreMap' => [],
                 'assignment' => $assignment,
+                'teacherFilters' => $teacherFilters,
+                'teacherFilterOptions' => $filterOptions,
+                'subjectCards' => $subjectCards,
+                'subjectCardTotal' => $totalFilteredSubjects,
+                'subjectPagination' => [
+                    'per_page' => $perPage,
+                    'current_page' => $currentPage,
+                    'total_pages' => $totalPages,
+                    'total_items' => $totalFilteredSubjects,
+                    'from' => $totalFilteredSubjects > 0 ? ($offset + 1) : 0,
+                    'to' => min($offset + $perPage, $totalFilteredSubjects),
+                ],
                 'selectedSubject' => $selectedSubject,
                 'subjectStudents' => $subjectStudents,
                 'subjectScoreMap' => $subjectScoreMap,
@@ -163,12 +205,6 @@ final class GradesController extends Controller
             }
 
             $assignment = $this->teacherAssignmentData($teacherId);
-            $studentClassId = (int) ($student['school_class_id'] ?? 0);
-            if (!in_array($studentClassId, $assignment['class_ids'], true)) {
-                flash('error', 'شما اجازه ثبت نمره برای این شاگرد را ندارید.');
-                $this->redirect('/grades');
-            }
-
             $allowedSubjects = $this->filterSubjectsByAllowedIds($allowedSubjects, $assignment['subject_ids']);
             $allModalSubjects = $this->filterSubjectsByAllowedIds($allModalSubjects, $assignment['subject_ids']);
             $recordedByTeacherId = $teacherId;
@@ -353,15 +389,6 @@ final class GradesController extends Controller
             }
 
             $assignment = $this->teacherAssignmentData($teacherId);
-            $studentClassId = (int) ($student['school_class_id'] ?? 0);
-
-            if (!in_array($studentClassId, $assignment['class_ids'], true)) {
-                $this->jsonResponse([
-                    'ok' => false,
-                    'message' => 'شما اجازه ثبت نمره برای این شاگرد را ندارید.',
-                ], 403);
-            }
-
             $editableSubjects = $this->filterSubjectsByAllowedIds($editableSubjects, $assignment['subject_ids']);
             $subjects = $this->filterSubjectsByAllowedIds($subjects, $assignment['subject_ids']);
         } elseif (!is_super_admin() && !can('manage_grades')) {
@@ -432,16 +459,6 @@ final class GradesController extends Controller
     {
         $db = Database::connection();
 
-        $classesStmt = $db->prepare(
-            'SELECT sc.id, sc.name
-             FROM teacher_class tc
-             JOIN school_classes sc ON sc.id = tc.class_id
-             WHERE tc.teacher_id = :teacher_id
-             ORDER BY sc.name'
-        );
-        $classesStmt->execute(['teacher_id' => $teacherId]);
-        $classes = $classesStmt->fetchAll();
-
         $subjectsStmt = $db->prepare(
             'SELECT s.id, s.name, s.level_id, s.semester, s.period_id,
                     l.name AS level_name, l.code AS level_code, cp.number AS period_number
@@ -461,11 +478,172 @@ final class GradesController extends Controller
         unset($subject);
 
         return [
-            'classes' => $classes,
             'subjects' => $subjects,
-            'class_ids' => array_map(static fn (array $row): int => (int) $row['id'], $classes),
             'subject_ids' => array_map(static fn (array $row): int => (int) $row['id'], $subjects),
         ];
+    }
+
+    private function teacherSubjectRosterMap(array $subjects): array
+    {
+        $map = [];
+        foreach ($subjects as $subject) {
+            $subjectId = (int) ($subject['id'] ?? 0);
+            if ($subjectId <= 0) {
+                continue;
+            }
+
+            $map[$subjectId] = $this->studentsForTeacherSubject($subject);
+        }
+
+        return $map;
+    }
+
+    private function teacherSubjectFilterOptions(array $subjects, array $subjectRosterMap): array
+    {
+        $levels = [];
+        foreach ($subjects as $subject) {
+            $levelCode = (string) ($subject['level_code'] ?? '');
+            $levelName = (string) ($subject['level_name'] ?? '');
+            if ($levelCode !== '' && $levelName !== '') {
+                $levels[$levelCode] = $levelName;
+            }
+        }
+
+        $orderedLevels = [];
+        foreach (['aali', 'moteseta', 'ebtedai'] as $code) {
+            if (isset($levels[$code])) {
+                $orderedLevels[] = [
+                    'code' => $code,
+                    'name' => $levels[$code],
+                ];
+            }
+        }
+
+        $years = [];
+        $classes = [];
+        foreach ($subjectRosterMap as $students) {
+            foreach ($students as $student) {
+                $year = (int) ($student['enrollment_year'] ?? 0);
+                if ($year > 0) {
+                    $years[$year] = $year;
+                }
+
+                $classId = (int) ($student['school_class_id'] ?? 0);
+                $className = trim((string) ($student['class_name'] ?? ''));
+                if ($classId > 0 && $className !== '') {
+                    $classes[$classId] = [
+                        'id' => $classId,
+                        'name' => $className,
+                    ];
+                }
+            }
+        }
+
+        rsort($years, SORT_NUMERIC);
+        uasort($classes, static fn (array $a, array $b): int => strcmp((string) ($a['name'] ?? ''), (string) ($b['name'] ?? '')));
+
+        return [
+            'levels' => $orderedLevels,
+            'years' => array_values($years),
+            'classes' => array_values($classes),
+        ];
+    }
+
+    private function normalizeTeacherSubjectFilters(array $filterOptions): array
+    {
+        $q = trim((string) ($_GET['q'] ?? ''));
+        if (mb_strlen($q) > 100) {
+            $q = mb_substr($q, 0, 100);
+        }
+
+        $validLevelCodes = array_map(
+            static fn (array $level): string => (string) ($level['code'] ?? ''),
+            $filterOptions['levels'] ?? []
+        );
+        $level = trim((string) ($_GET['level'] ?? ''));
+        if (!in_array($level, $validLevelCodes, true)) {
+            $level = '';
+        }
+
+        $validYears = array_map('intval', $filterOptions['years'] ?? []);
+        $year = (int) ($_GET['year'] ?? 0);
+        if (!in_array($year, $validYears, true)) {
+            $year = 0;
+        }
+
+        $validClassIds = array_map(
+            static fn (array $class): int => (int) ($class['id'] ?? 0),
+            $filterOptions['classes'] ?? []
+        );
+        $classId = (int) ($_GET['class_id'] ?? 0);
+        if (!in_array($classId, $validClassIds, true)) {
+            $classId = 0;
+        }
+
+        $page = max(1, (int) ($_GET['page'] ?? 1));
+
+        return [
+            'q' => $q,
+            'level' => $level,
+            'year' => $year,
+            'class_id' => $classId,
+            'page' => $page,
+        ];
+    }
+
+    private function matchesTeacherSubjectFilters(array $subject, array $filters): bool
+    {
+        $query = trim((string) ($filters['q'] ?? ''));
+        if ($query !== '') {
+            $haystacks = [
+                mb_strtolower((string) ($subject['name'] ?? '')),
+                mb_strtolower((string) ($subject['level_name'] ?? '')),
+                mb_strtolower((string) ($subject['term_label'] ?? '')),
+            ];
+            $needle = mb_strtolower($query);
+            $matched = false;
+            foreach ($haystacks as $haystack) {
+                if ($haystack !== '' && mb_strpos($haystack, $needle) !== false) {
+                    $matched = true;
+                    break;
+                }
+            }
+
+            if (!$matched) {
+                return false;
+            }
+        }
+
+        $level = (string) ($filters['level'] ?? '');
+        if ($level !== '' && (string) ($subject['level_code'] ?? '') !== $level) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private function filterTeacherRosterStudents(array $students, array $filters): array
+    {
+        $year = (int) ($filters['year'] ?? 0);
+        $classId = (int) ($filters['class_id'] ?? 0);
+
+        if ($year <= 0 && $classId <= 0) {
+            return $students;
+        }
+
+        $filtered = [];
+        foreach ($students as $student) {
+            if ($year > 0 && (int) ($student['enrollment_year'] ?? 0) !== $year) {
+                continue;
+            }
+            if ($classId > 0 && (int) ($student['school_class_id'] ?? 0) !== $classId) {
+                continue;
+            }
+
+            $filtered[] = $student;
+        }
+
+        return $filtered;
     }
 
     private function filterSubjectsByAllowedIds(array $subjects, array $allowedIds): array
@@ -513,7 +691,7 @@ final class GradesController extends Controller
         return $periodNumber > 0 ? ('دوره ' . (string) $periodNumber) : 'دوره —';
     }
 
-    private function studentsForTeacherSubject(array $assignment, array $subject): array
+    private function studentsForTeacherSubject(array $subject): array
     {
         $subjectId = (int) ($subject['id'] ?? 0);
         $levelId = (int) ($subject['level_id'] ?? 0);
@@ -522,26 +700,12 @@ final class GradesController extends Controller
         }
 
         $db = Database::connection();
-        $sql = 'SELECT s.id, s.name, s.school_class_id, sc.name AS class_name, s.level_id, l.code AS level_code
+        $sql = 'SELECT s.id, s.name, s.school_class_id, sc.name AS class_name, s.level_id, l.code AS level_code, s.enrollment_year
             FROM students s
             LEFT JOIN school_classes sc ON sc.id = s.school_class_id
             LEFT JOIN study_levels l ON l.id = s.level_id
             WHERE s.level_id = ?';
         $params = [$levelId];
-
-        if (($assignment['class_ids'] ?? []) !== []) {
-            $classIds = array_values(array_filter(
-                array_map('intval', (array) ($assignment['class_ids'] ?? [])),
-                static fn (int $id): bool => $id > 0
-            ));
-            if ($classIds === []) {
-                return [];
-            }
-
-            $placeholders = implode(',', array_fill(0, count($classIds), '?'));
-            $sql .= " AND s.school_class_id IN ($placeholders)";
-            $params = array_merge($params, $classIds);
-        }
 
         $sql .= ' ORDER BY s.name';
 
@@ -1136,7 +1300,7 @@ final class GradesController extends Controller
             $this->redirect('/grades');
         }
 
-        $allowedStudents = $this->studentsForTeacherSubject($assignment, $selectedSubject);
+        $allowedStudents = $this->studentsForTeacherSubject($selectedSubject);
         if ($allowedStudents === []) {
             flash('error', 'برای این مضمون شاگرد قابل نمره‌دهی یافت نشد.');
             $this->redirect('/grades?subject_id=' . $subjectId);

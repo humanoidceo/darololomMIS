@@ -47,15 +47,6 @@ final class AccountController extends Controller
             }
 
             $db = Database::connection();
-            $classStmt = $db->prepare(
-                'SELECT sc.id, sc.name
-                 FROM teacher_class tc
-                 JOIN school_classes sc ON sc.id = tc.class_id
-                 WHERE tc.teacher_id = :teacher_id
-                 ORDER BY sc.name'
-            );
-            $classStmt->execute(['teacher_id' => $teacher['id']]);
-
             $subjectStmt = $db->prepare(
                 'SELECT s.id, s.name
                  FROM teacher_subject ts
@@ -73,7 +64,6 @@ final class AccountController extends Controller
                 'studentGradeRows' => [],
                 'teacher' => $teacher,
                 'teacherAssignments' => [
-                    'classes' => $classStmt->fetchAll(),
                     'subjects' => $subjectStmt->fetchAll(),
                 ],
                 'activeTab' => 'profile',

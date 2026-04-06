@@ -39,6 +39,70 @@
     font-weight: 700;
 }
 
+.teacher-grade-toolbar {
+    display: grid;
+    grid-template-columns: minmax(240px, 2fr) repeat(3, minmax(150px, 1fr)) auto;
+    gap: 14px;
+    align-items: end;
+    padding: 18px;
+    margin-bottom: 18px;
+    border-radius: 18px;
+    background: linear-gradient(180deg, #fbfdff 0%, #f3f8fd 100%);
+    border: 1px solid #d8e5f2;
+}
+
+.teacher-grade-filter label {
+    display: block;
+    margin-bottom: 6px;
+    color: #446079;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.teacher-grade-filter .form-control {
+    height: 44px;
+    border-radius: 12px;
+    border-color: #cfdeec;
+    box-shadow: none;
+}
+
+.teacher-grade-filter .form-control:focus {
+    border-color: #7db2e4;
+    box-shadow: 0 0 0 3px rgba(70, 130, 180, 0.12);
+}
+
+.teacher-grade-toolbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.teacher-grade-apply {
+    min-height: 44px;
+    padding: 10px 18px;
+}
+
+.teacher-grade-reset {
+    color: #597189;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.teacher-grade-reset:hover,
+.teacher-grade-reset:focus {
+    color: #1f5f93;
+    text-decoration: none;
+}
+
+.teacher-grade-results-meta {
+    margin-bottom: 14px;
+    color: #5a7186;
+    font-size: 13px;
+    font-weight: 700;
+}
+
 .teacher-subject-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -49,6 +113,7 @@
 .teacher-subject-card {
     position: relative;
     display: block;
+    min-height: 198px;
     padding: 18px;
     border-radius: 18px;
     text-decoration: none;
@@ -119,11 +184,38 @@
     font-weight: 800;
 }
 
+.teacher-subject-card-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.teacher-subject-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 30px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: #edf4fb;
+    color: #315f87;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.teacher-subject-card.is-active .teacher-subject-count {
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+}
+
 .teacher-subject-link {
     margin: 0;
     color: #2d6797;
     font-size: 13px;
     font-weight: 700;
+    text-align: left;
 }
 
 .teacher-grade-empty {
@@ -211,6 +303,47 @@
     font-weight: 700;
 }
 
+.teacher-grade-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 10px 0 22px;
+}
+
+.teacher-grade-page-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 42px;
+    min-height: 42px;
+    padding: 8px 14px;
+    border-radius: 12px;
+    background: #ffffff;
+    border: 1px solid #d8e5f1;
+    color: #41627f;
+    font-size: 13px;
+    font-weight: 800;
+    text-decoration: none;
+    transition: all 0.18s ease;
+}
+
+.teacher-grade-page-link:hover,
+.teacher-grade-page-link:focus {
+    text-decoration: none;
+    color: #1f5f93;
+    border-color: #95c0e8;
+    transform: translateY(-1px);
+}
+
+.teacher-grade-page-link.is-active {
+    background: #1f5f93;
+    border-color: #1f5f93;
+    color: #ffffff;
+    box-shadow: 0 14px 24px rgba(31, 95, 147, 0.2);
+}
+
 @media (max-width: 991px) {
     .teacher-grade-header,
     .teacher-grade-panel-head {
@@ -221,9 +354,18 @@
     .teacher-grade-summary {
         justify-content: flex-start;
     }
+
+    .teacher-grade-toolbar {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
 @media (max-width: 767px) {
+    .teacher-grade-toolbar {
+        grid-template-columns: 1fr;
+        padding: 16px;
+    }
+
     .teacher-subject-grid {
         grid-template-columns: 1fr;
     }
@@ -234,5 +376,14 @@
 
     .teacher-grade-table input.form-control {
         min-width: 84px;
+    }
+
+    .teacher-subject-card-bottom {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .teacher-subject-link {
+        text-align: right;
     }
 }

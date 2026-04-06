@@ -129,7 +129,7 @@
                         <a href="<?= e($buildTeacherGradesUrl([
                             'subject_id' => (int) ($subject['id'] ?? 0),
                             'page' => (int) ($subjectPagination['current_page'] ?? 1),
-                        ])) ?>" class="teacher-subject-card<?= $isActiveSubject ? ' is-active' : '' ?>">
+                        ])) ?>" class="teacher-subject-card<?= $isActiveSubject ? ' is-active' : '' ?>" title="<?= e((string) ($subject['name'] ?? '—')) ?>">
                             <div class="teacher-subject-card-top">
                                 <span class="teacher-subject-pill"><?= e((string) ($subject['level_name'] ?? 'مضمون')) ?></span>
                                 <span class="teacher-subject-term"><?= e((string) ($subject['term_label'] ?? '—')) ?></span>

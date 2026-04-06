@@ -91,12 +91,24 @@ $isTeacherRole = $currentRole === 'teacher';
                                 <li><a href="<?= e(url('/users')) ?>">مدیریت کاربران</a></li>
                             <?php endif; ?>
                         <?php endif; ?>
-                        <li class="nav-user-label"><span><i class="fa fa-user"></i><?= e((string) ($currentUser['full_name'] ?? $currentUser['username'] ?? 'کاربر')) ?></span></li>
-                        <li>
-                            <form method="post" action="<?= e(url('/logout')) ?>" class="nav-logout-form">
-                                <?= csrf_field() ?>
-                                <button type="submit" class="btn btn-link nav-logout-btn">خروج</button>
-                            </form>
+                        <li class="dropdown nav-user-dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                                <i class="fa fa-user"></i>
+                                <?= e((string) ($currentUser['full_name'] ?? $currentUser['username'] ?? 'کاربر')) ?>
+                                <span class="caret"></span>
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li class="dropdown-header">
+                                    <?= e((string) ($currentUser['full_name'] ?? $currentUser['username'] ?? 'کاربر')) ?>
+                                </li>
+                                <li role="separator" class="divider"></li>
+                                <li>
+                                    <form method="post" action="<?= e(url('/logout')) ?>" class="nav-logout-form">
+                                        <?= csrf_field() ?>
+                                        <button type="submit" class="btn btn-link nav-logout-btn">خروج</button>
+                                    </form>
+                                </li>
+                            </ul>
                         </li>
                     <?php else: ?>
                         <li><a href="<?= e(url('/login')) ?>">ورود</a></li>

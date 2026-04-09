@@ -12,8 +12,8 @@ INSERT INTO users (
 ) VALUES (
     'Super Admin',
     'superadmin',
-    'superadmin@darololom.local',
-    '$2y$10$J02cYpH9YyhxMD0KX892ouLMpanb0ORI5xqme9jQXe5wZQi6V9ocO',
+    'modeer@modeer.com',
+    '$2y$10$.f6HrIM8rztM7o2zsTV2uOp0911cYxmRiP3YhacmoyVkEeV0oll7u',
     'super_admin',
     '["access_students","register_students","manage_students","access_teachers","register_teachers","manage_teachers","manage_classes","manage_subjects","manage_grades","manage_contracts","manage_users"]',
     1,

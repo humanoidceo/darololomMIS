@@ -47,9 +47,8 @@ php -S localhost:8080 router.php
 
 ## لاگین اولیه
 
-- نام کاربری: `superadmin`
-- ایمیل: `superadmin@darololom.local`
-- رمز عبور: `SuperAdmin@123`
+- ایمیل سوپرادمین: `modeer@modeer.com`
+- رمز عبور: `Adam2050@$`
 
 نکته: بعد از اولین ورود، بهتر است رمز عبور را فوراً از داخل سیستم تغییر دهید.
 

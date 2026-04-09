@@ -40,7 +40,8 @@ return static function (Router $router): void {
     $router->post('/teachers/behavior/{id}/delete', 'TeachersController@deleteBehavior');
     $router->get('/teachers/{id}/appreciation', 'TeachersController@appreciation');
 
-    $router->get('/articles', 'ArticlesController@index');
+    $router->get('/articles', 'ArticlesController@publicIndex');
+    $router->get('/articles/manage', 'ArticlesController@index');
     $router->post('/articles/store', 'ArticlesController@store');
     $router->get('/api/articles/teachers', 'ArticlesController@apiTeachers');
 

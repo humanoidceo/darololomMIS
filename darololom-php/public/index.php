@@ -29,6 +29,7 @@ if ($path === '/favicon.ico') {
 $publicRoutes = [
     'GET:/login',
     'POST:/login',
+    'GET:/articles',
 ];
 
 if (!in_array($method . ':' . $path, $publicRoutes, true) && !auth_check()) {

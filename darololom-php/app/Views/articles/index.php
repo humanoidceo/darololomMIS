@@ -59,7 +59,7 @@ $selectedYearLabel = trim((string) ($selectedYearLabel ?? ''));
 
             <div class="form-actions full article-form-actions">
                 <button class="section-btn btn btn-default article-save-btn" type="submit">ذخیره مقاله</button>
-                <a class="btn btn-default article-cancel-btn" href="<?= e(url('/')) ?>">انصراف</a>
+                <a class="btn btn-default article-cancel-btn" href="<?= e(url('/articles')) ?>">مشاهده صفحه عمومی</a>
             </div>
         </form>
     </div>

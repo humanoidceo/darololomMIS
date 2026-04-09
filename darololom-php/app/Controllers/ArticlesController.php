@@ -10,6 +10,45 @@ use PDO;
 
 final class ArticlesController extends Controller
 {
+    public function publicIndex(array $params = []): void
+    {
+        $this->ensureArticlesTable();
+
+        $page = max(1, (int) ($_GET['page'] ?? 1));
+        $pageSize = 20;
+        $offset = ($page - 1) * $pageSize;
+
+        $db = Database::connection();
+        $countStmt = $db->query('SELECT COUNT(*) FROM articles');
+        $total = (int) $countStmt->fetchColumn();
+        $totalPages = max(1, (int) ceil($total / $pageSize));
+
+        if ($page > $totalPages) {
+            $page = $totalPages;
+            $offset = ($page - 1) * $pageSize;
+        }
+
+        $stmt = $db->prepare(
+            'SELECT a.*, t.name AS author_name, t.father_name AS author_father_name
+             FROM articles a
+             JOIN teachers t ON t.id = a.author_id
+             ORDER BY a.created_at DESC, a.id DESC
+             LIMIT :limit OFFSET :offset'
+        );
+        $stmt->bindValue(':limit', $pageSize, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $this->render('articles/public_index', [
+            'title' => 'مقالات',
+            'articles' => $stmt->fetchAll(),
+            'page' => $page,
+            'pageSize' => $pageSize,
+            'total' => $total,
+            'totalPages' => $totalPages,
+        ]);
+    }
+
     public function index(array $params = []): void
     {
         $this->authorize('access_teachers', 'شما اجازه دسترسی به بخش مقالات را ندارید.', '/');
@@ -62,33 +101,33 @@ final class ArticlesController extends Controller
         if ($authorId <= 0) {
             with_old($_POST);
             flash('error', 'انتخاب مولف الزامی است.');
-            $this->redirect('/articles');
+            $this->redirect('/articles/manage');
         }
 
         if ($publicationYear < 1300 || $publicationYear > 1500) {
             with_old($_POST);
             flash('error', 'سال تالیف باید بین ۱۳۰۰ تا ۱۵۰۰ باشد.');
-            $this->redirect('/articles');
+            $this->redirect('/articles/manage');
         }
 
         if (!$this->teacherExists($authorId)) {
             with_old($_POST);
             flash('error', 'مولف انتخاب‌شده معتبر نیست.');
-            $this->redirect('/articles');
+            $this->redirect('/articles/manage');
         }
 
         $uploadError = $this->validateArticleFile();
         if ($uploadError !== null) {
             with_old($_POST);
             flash('error', $uploadError);
-            $this->redirect('/articles');
+            $this->redirect('/articles/manage');
         }
 
         $filePath = upload_file('article_file', 'articles', ['pdf', 'doc', 'docx']);
         if ($filePath === null) {
             with_old($_POST);
             flash('error', 'اپلود فایل مقاله ناموفق بود.');
-            $this->redirect('/articles');
+            $this->redirect('/articles/manage');
         }
 
         $db = Database::connection();
@@ -105,7 +144,7 @@ final class ArticlesController extends Controller
 
         clear_old();
         flash('success', 'مقاله با موفقیت اپلود شد.');
-        $this->redirect('/articles');
+        $this->redirect('/articles/manage');
     }
 
     public function apiTeachers(array $params = []): void

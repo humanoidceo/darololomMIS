@@ -77,7 +77,7 @@ $isTeacherRole = $currentRole === 'teacher';
                         <?php else: ?>
                             <li><a href="<?= e(url('/')) ?>">داشبورد</a></li>
                             <?php if (can('access_teachers')): ?>
-                                <li><a href="<?= e(url('/articles')) ?>">مقالات</a></li>
+                                <li><a href="<?= e(url('/articles/manage')) ?>">مقالات</a></li>
                             <?php endif; ?>
                             <?php if (can('access_students')): ?>
                                 <li><a href="<?= e(url('/students')) ?>">دانش‌آموزان</a></li>

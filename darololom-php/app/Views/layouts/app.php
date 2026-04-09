@@ -40,11 +40,8 @@ $isTeacherRole = $currentRole === 'teacher';
     <header class="site-header">
         <div class="container">
             <div class="site-header-main">
-                <div class="site-header-brand">
-                    <span class="site-header-logo-wrap">
-                        <img src="<?= e(url('/assets/images/logo.jpg')) ?>" alt="لوگوی دارالعلوم" class="site-header-logo" onerror="this.style.display='none';">
-                    </span>
-                    <p>دارالعلوم عالی الحاج سید منصور نادری</p>
+                <div class="site-header-copy">
+                    <h1 class="site-header-title">دارالعلوم عالی الحاج سید منصور نادری</h1>
                     <nav class="site-header-quick-nav" aria-label="گزینه‌های هدر">
                         <a href="<?= e(url('/')) ?>">خانه</a>
                         <a href="<?= e(url('/articles')) ?>">مقالات</a>
@@ -52,6 +49,9 @@ $isTeacherRole = $currentRole === 'teacher';
                         <a href="<?= e(url('/#contact-us')) ?>">تماس با ما</a>
                     </nav>
                 </div>
+                    <span class="site-header-logo-wrap">
+                        <img src="<?= e(url('/assets/images/logo.jpg')) ?>" alt="لوگوی دارالعلوم" class="site-header-logo" onerror="this.style.display='none';">
+                    </span>
                     
             </div>
         </div>
@@ -137,16 +137,28 @@ $isTeacherRole = $currentRole === 'teacher';
 
     <footer class="system-footer" data-stellar-background-ratio="5">
         <div class="container">
-            <div class="row">
-                <div class="col-md-8 col-sm-6">
-                    <div class="footer-thumb">
-                        <h4 class="wow fadeInUp" data-wow-delay="0.4s">دارالعلوم  عالی الحاج سید منصور نادری</h4>
-                    <p>
-                        جوار مسجد الحاج سید منصور نادری، چهارراهی پروژه تایمنی، کابل، افغانستان
-                    </p> </div>
+            <div class="system-footer-top">
+                <div class="system-footer-badge">دارالعلوم عالی الحاج سید منصور نادری</div>
+            </div>
+
+            <div class="row system-footer-grid">
+                <div class="col-lg-4 col-md-6 col-sm-12">
+                    <div class="footer-thumb system-footer-card">
+                        <h4>معرفی کوتاه</h4>
+                        <p>
+                            دارالعلوم عالی الحاج سید منصور نادری با ساختار منظم آموزشی و اداری، محیطی مناسب برای رشد علمی و اخلاقی شاگردان فراهم ساخته و خدمات خود را به شکل روشن و حرفه‌ای معرفی می‌کند.
+                        </p>
+                        <div class="system-footer-tags">
+                            <span>آموزش منظم</span>
+                            <span>دسترسی عمومی</span>
+                            <span>مدیریت حرفه‌ای</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="col-md-4 col-sm-6">
-                    <div class="footer-thumb">
+
+                <div class="col-lg-3 col-md-6 col-sm-12">
+                    <div class="footer-thumb system-footer-card">
+                        <h4>لینک‌های مهم</h4>
                         <ul class="footer-links">
                             <?php if ($isStudentRole): ?>
                                 <li><a href="<?= e(url('/account')) ?>">مشاهده مشخصات من</a></li>
@@ -157,6 +169,7 @@ $isTeacherRole = $currentRole === 'teacher';
                             <?php elseif ($isLoggedIn): ?>
                                 <li><a href="<?= e(url('/dashboard')) ?>">داشبورد مدیریتی</a></li>
                                 <li><a href="<?= e(url('/articles/manage')) ?>">مدیریت مقالات</a></li>
+                                <li><a href="<?= e(url('/articles')) ?>">صفحه عمومی مقالات</a></li>
                             <?php else: ?>
                                 <li><a href="<?= e(url('/')) ?>">خانه</a></li>
                                 <li><a href="<?= e(url('/articles')) ?>">مقالات</a></li>
@@ -164,10 +177,29 @@ $isTeacherRole = $currentRole === 'teacher';
                                 <li><a href="<?= e(url('/#contact-us')) ?>">تماس با ما</a></li>
                             <?php endif; ?>
                         </ul>
-
-                        <p class="footer-copy">© <?= date('Y') ?> دارالعلوم عالی الحاج سید منصور نادری - همه حقوق محفوظ است.</p>
                     </div>
                 </div>
+
+                <div class="col-lg-5 col-md-12 col-sm-12">
+                    <div class="footer-thumb system-footer-card">
+                        <h4>موقعیت دارالعلوم</h4>
+                        <p class="system-footer-contact-text">جوار مسجد الحاج سید منصور نادری، چهارراهی پروژه تایمنی، کابل، افغانستان</p>
+                        <div class="system-footer-map-wrap">
+                            <iframe
+                                class="system-footer-map"
+                                title="نقشه موقعیت دارالعلوم"
+                                loading="lazy"
+                                referrerpolicy="no-referrer-when-downgrade"
+                                src="https://www.google.com/maps?q=%D8%AC%D9%88%D8%A7%D8%B1%20%D9%85%D8%B3%D8%AC%D8%AF%20%D8%A7%D9%84%D8%AD%D8%A7%D8%AC%20%D8%B3%DB%8C%D8%AF%20%D9%85%D9%86%D8%B5%D9%88%D8%B1%20%D9%86%D8%A7%D8%AF%D8%B1%DB%8C%D8%8C%20%DA%86%D9%87%D8%A7%D8%B1%D8%B1%D8%A7%D9%87%DB%8C%20%D9%BE%D8%B1%D9%88%DA%98%D9%87%20%D8%AA%D8%A7%DB%8C%D9%85%D9%86%DB%8C%D8%8C%20%DA%A9%D8%A7%D8%A8%D9%84%D8%8C%20%D8%A7%D9%81%D8%BA%D8%A7%D9%86%D8%B3%D8%AA%D8%A7%D9%86&z=15&output=embed"
+                                allowfullscreen>
+                            </iframe>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="system-footer-bottom">
+                <p class="footer-copy">© <?= date('Y') ?> دارالعلوم عالی الحاج سید منصور نادری - همه حقوق محفوظ است.</p>
             </div>
         </div>
     </footer>

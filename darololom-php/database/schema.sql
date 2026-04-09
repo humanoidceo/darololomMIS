@@ -198,6 +198,19 @@ CREATE TABLE IF NOT EXISTS teachers (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS articles (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    author_id INT UNSIGNED NOT NULL,
+    publication_year SMALLINT UNSIGNED NOT NULL,
+    file_path VARCHAR(255) NOT NULL,
+    created_by INT UNSIGNED NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_articles_author (author_id),
+    INDEX idx_articles_year (publication_year),
+    CONSTRAINT fk_articles_author FOREIGN KEY (author_id) REFERENCES teachers(id) ON DELETE CASCADE,
+    CONSTRAINT fk_articles_created_by FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
 SET @has_teachers_current_street := (
     SELECT COUNT(*)
     FROM information_schema.columns

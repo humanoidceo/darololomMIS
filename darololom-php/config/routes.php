@@ -40,6 +40,10 @@ return static function (Router $router): void {
     $router->post('/teachers/behavior/{id}/delete', 'TeachersController@deleteBehavior');
     $router->get('/teachers/{id}/appreciation', 'TeachersController@appreciation');
 
+    $router->get('/articles', 'ArticlesController@index');
+    $router->post('/articles/store', 'ArticlesController@store');
+    $router->get('/api/articles/teachers', 'ArticlesController@apiTeachers');
+
     $router->get('/classes', 'ClassesController@index');
     $router->get('/classes/create', 'ClassesController@create');
     $router->post('/classes/store', 'ClassesController@store');

@@ -25,6 +25,7 @@ $isTeacherRole = $currentRole === 'teacher';
     <link rel="stylesheet" href="<?= e(url('/assets/css/modules/teachers.css')) ?>">
     <link rel="stylesheet" href="<?= e(url('/assets/css/modules/classes.css')) ?>">
     <link rel="stylesheet" href="<?= e(url('/assets/css/modules/subjects.css')) ?>">
+    <link rel="stylesheet" href="<?= e(url('/assets/css/modules/articles.css')) ?>">
     <link rel="stylesheet" href="<?= e(url('/assets/css/modules/grades.css')) ?>">
     <link rel="stylesheet" href="<?= e(url('/assets/css/modules/contracts.css')) ?>">
     <link rel="stylesheet" href="<?= e(url('/assets/css/modules/auth.css')) ?>">
@@ -45,7 +46,7 @@ $isTeacherRole = $currentRole === 'teacher';
                     <p>دارالعلوم عالی الحاج سید منصور نادری</p>
                     <nav class="site-header-quick-nav" aria-label="گزینه‌های هدر">
                         <a href="<?= e(url('/')) ?>">خانه</a>
-                        <a href="#articles">مقالات</a>
+                        <a href="<?= e(url('/articles')) ?>">مقالات</a>
                         <a href="#about-us">درباره ما</a>
                         <a href="#contact-us">تماس با ما</a>
                     </nav>
@@ -75,6 +76,9 @@ $isTeacherRole = $currentRole === 'teacher';
                             <li><a href="<?= e(url('/grades')) ?>">نمرات صنوف من</a></li>
                         <?php else: ?>
                             <li><a href="<?= e(url('/')) ?>">داشبورد</a></li>
+                            <?php if (can('access_teachers')): ?>
+                                <li><a href="<?= e(url('/articles')) ?>">مقالات</a></li>
+                            <?php endif; ?>
                             <?php if (can('access_students')): ?>
                                 <li><a href="<?= e(url('/students')) ?>">دانش‌آموزان</a></li>
                             <?php endif; ?>

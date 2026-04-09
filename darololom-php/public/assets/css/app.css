@@ -46,6 +46,23 @@ body.rtl-body ol {
     padding-left: 0;
 }
 
+body.rtl-body .container {
+    width: 100% !important;
+    max-width: none !important;
+    padding-left: 34px !important;
+    padding-right: 34px !important;
+}
+
+body.rtl-body .row {
+    margin-left: -12px;
+    margin-right: -12px;
+}
+
+body.rtl-body [class*='col-'] {
+    padding-left: 12px;
+    padding-right: 12px;
+}
+
 body.rtl-body .text-left {
     text-align: right !important;
 }
@@ -247,13 +264,14 @@ body.rtl-body .section-btn i {
 }
 
 .app-shell {
-    padding-top: 40px;
-    padding-bottom: 60px;
+    padding-top: 34px;
+    padding-bottom: 72px;
     min-height: 68vh;
 }
 
 .section-title h2 {
-    font-size: 2.4em;
+    font-size: 2.6em;
+    margin-bottom: 8px;
 }
 
 .toolbar-row {
@@ -278,6 +296,7 @@ body.rtl-body .section-btn i {
 .news-thumb {
     border: 1px solid #eef2e0;
     box-shadow: 0 14px 30px rgba(63, 78, 35, 0.08);
+    border-radius: 20px;
 }
 
 body.rtl-body .form-control,
@@ -393,6 +412,24 @@ body.rtl-body .inline-checks label input[type='checkbox'] {
 
 .actions-cell form {
     display: inline-block;
+}
+
+@media (max-width: 991px) {
+    body.rtl-body .container {
+        padding-left: 20px !important;
+        padding-right: 20px !important;
+    }
+}
+
+@media (max-width: 767px) {
+    body.rtl-body .container {
+        padding-left: 14px !important;
+        padding-right: 14px !important;
+    }
+
+    .section-title h2 {
+        font-size: 2.1em;
+    }
 }
 
 .behavior-row {

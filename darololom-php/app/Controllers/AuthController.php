@@ -12,7 +12,7 @@ final class AuthController extends Controller
     public function showLogin(array $params = []): void
     {
         if (auth_check()) {
-            $this->redirect('/');
+            $this->redirect('/dashboard');
         }
 
         $this->render('auth/login', [
@@ -55,11 +55,11 @@ final class AuthController extends Controller
         clear_old();
         flash('success', 'خوش آمدید، ' . ((string) ($user['full_name'] ?? 'کاربر')));
 
-        $target = (string) ($_SESSION['_intended'] ?? '/');
+        $target = (string) ($_SESSION['_intended'] ?? '/dashboard');
         unset($_SESSION['_intended']);
 
         if ($target === '' || !str_starts_with($target, '/') || $target === '/login') {
-            $target = '/';
+            $target = '/dashboard';
         }
 
         $this->redirect($target);

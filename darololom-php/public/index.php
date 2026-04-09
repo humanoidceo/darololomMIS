@@ -27,6 +27,7 @@ if ($path === '/favicon.ico') {
 }
 
 $publicRoutes = [
+    'GET:/',
     'GET:/login',
     'POST:/login',
     'GET:/articles',

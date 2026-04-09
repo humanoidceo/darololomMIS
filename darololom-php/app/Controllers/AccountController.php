@@ -71,7 +71,7 @@ final class AccountController extends Controller
             return;
         }
 
-        $this->redirect('/');
+        $this->redirect('/dashboard');
     }
 
     public function updateSecurity(array $params = []): void
@@ -81,7 +81,7 @@ final class AccountController extends Controller
 
         if (!in_array($role, ['student', 'teacher'], true)) {
             flash('error', 'اجازه تغییر حساب برای این نقش موجود نیست.');
-            $this->redirect('/');
+            $this->redirect('/dashboard');
         }
 
         $this->csrfCheck();

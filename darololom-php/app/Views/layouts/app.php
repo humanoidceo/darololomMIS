@@ -21,6 +21,7 @@ $isTeacherRole = $currentRole === 'teacher';
     <link rel="stylesheet" href="<?= e(url('/assets/health/css/tooplate-style.css')) ?>">
     <link rel="stylesheet" href="<?= e(url('/assets/css/app.css')) ?>">
     <link rel="stylesheet" href="<?= e(url('/assets/css/modules/dashboard.css')) ?>">
+    <link rel="stylesheet" href="<?= e(url('/assets/css/modules/home.css')) ?>">
     <link rel="stylesheet" href="<?= e(url('/assets/css/modules/students.css')) ?>">
     <link rel="stylesheet" href="<?= e(url('/assets/css/modules/teachers.css')) ?>">
     <link rel="stylesheet" href="<?= e(url('/assets/css/modules/classes.css')) ?>">
@@ -47,8 +48,8 @@ $isTeacherRole = $currentRole === 'teacher';
                     <nav class="site-header-quick-nav" aria-label="گزینه‌های هدر">
                         <a href="<?= e(url('/')) ?>">خانه</a>
                         <a href="<?= e(url('/articles')) ?>">مقالات</a>
-                        <a href="#about-us">درباره ما</a>
-                        <a href="#contact-us">تماس با ما</a>
+                        <a href="<?= e(url('/#about-us')) ?>">درباره ما</a>
+                        <a href="<?= e(url('/#contact-us')) ?>">تماس با ما</a>
                     </nav>
                 </div>
                     
@@ -75,7 +76,7 @@ $isTeacherRole = $currentRole === 'teacher';
                             <li><a href="<?= e(url('/account')) ?>">حساب من</a></li>
                             <li><a href="<?= e(url('/grades')) ?>">نمرات صنوف من</a></li>
                         <?php else: ?>
-                            <li><a href="<?= e(url('/')) ?>">داشبورد</a></li>
+                            <li><a href="<?= e(url('/dashboard')) ?>">داشبورد</a></li>
                             <?php if (can('access_teachers')): ?>
                                 <li><a href="<?= e(url('/articles/manage')) ?>">مقالات</a></li>
                             <?php endif; ?>
@@ -153,9 +154,14 @@ $isTeacherRole = $currentRole === 'teacher';
                             <?php elseif ($isTeacherRole): ?>
                                 <li><a href="<?= e(url('/account')) ?>">مشاهده مشخصات من</a></li>
                                 <li><a href="<?= e(url('/grades')) ?>">ثبت نمرات صنوف من</a></li>
+                            <?php elseif ($isLoggedIn): ?>
+                                <li><a href="<?= e(url('/dashboard')) ?>">داشبورد مدیریتی</a></li>
+                                <li><a href="<?= e(url('/articles/manage')) ?>">مدیریت مقالات</a></li>
                             <?php else: ?>
-                                <li><a href="<?= e(url('/students')) ?>">مدیریت دانش‌آموزان</a></li>
-                                <li><a href="<?= e(url('/teachers')) ?>">مدیریت استادان</a></li>
+                                <li><a href="<?= e(url('/')) ?>">خانه</a></li>
+                                <li><a href="<?= e(url('/articles')) ?>">مقالات</a></li>
+                                <li><a href="<?= e(url('/#about-us')) ?>">درباره ما</a></li>
+                                <li><a href="<?= e(url('/#contact-us')) ?>">تماس با ما</a></li>
                             <?php endif; ?>
                         </ul>
 

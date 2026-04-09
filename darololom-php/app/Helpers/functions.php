@@ -34,6 +34,41 @@ function url(string $path = ''): string
     return $base . ($path === '/' ? '' : $path);
 }
 
+function file_url(string $path = ''): string
+{
+    $path = trim($path);
+    if ($path === '' || $path === '/') {
+        return url('/');
+    }
+
+    $fragment = '';
+    $query = '';
+
+    $hashPos = strpos($path, '#');
+    if ($hashPos !== false) {
+        $fragment = substr($path, $hashPos);
+        $path = substr($path, 0, $hashPos);
+    }
+
+    $queryPos = strpos($path, '?');
+    if ($queryPos !== false) {
+        $query = substr($path, $queryPos);
+        $path = substr($path, 0, $queryPos);
+    }
+
+    $segments = explode('/', ltrim($path, '/'));
+    $encodedSegments = [];
+
+    foreach ($segments as $segment) {
+        if ($segment === '') {
+            continue;
+        }
+        $encodedSegments[] = rawurlencode($segment);
+    }
+
+    return url('/' . implode('/', $encodedSegments)) . $query . $fragment;
+}
+
 function csrf_token(): string
 {
     if (empty($_SESSION['_csrf_token'])) {

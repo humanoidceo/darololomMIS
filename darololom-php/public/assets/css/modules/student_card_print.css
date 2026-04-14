@@ -6,6 +6,8 @@
   direction: rtl !important;
   unicode-bidi: embed !important;
   text-rendering: optimizeLegibility !important;
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
 }
 
 @page {
@@ -13,10 +15,25 @@
   margin: 0;
 }
 
+html,
+body {
+  width: 100%;
+}
+
 @media print {
+  html,
+  body {
+    width: 440px !important;
+    height: 620px !important;
+    overflow: hidden !important;
+    background: #ffffff !important;
+  }
+
   body {
     margin: 0 !important;
     padding: 0 !important;
+    min-height: 0 !important;
+    display: block !important;
   }
 
   #printCard {
@@ -24,7 +41,10 @@
     height: 620px !important;
     margin: 0 !important;
     padding: 0 !important;
-    page-break-after: avoid;
+    page-break-after: avoid !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    overflow: hidden !important;
   }
 
   #printCard * {
@@ -32,6 +52,8 @@
     direction: rtl !important;
     unicode-bidi: embed !important;
     text-rendering: optimizeLegibility !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 }
 
@@ -48,6 +70,7 @@ body {
 #printCard {
   width: 440px;
   height: 620px;
+  overflow: hidden;
 }
 
 #printCard * {

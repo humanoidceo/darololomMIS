@@ -111,6 +111,61 @@
             z-index: 1;
         }
 
+        .id-card-student-id-rail {
+            position: absolute;
+            top: 18px;
+            right: 10px;
+            bottom: 18px;
+            width: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+        }
+
+        .id-card-student-id-rail span {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            transform: rotate(180deg);
+            font-size: 10px;
+            line-height: 1.2;
+            font-weight: 800;
+            letter-spacing: 1px;
+            color: rgba(255, 246, 221, 0.94);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+            white-space: nowrap;
+        }
+
+        .id-card-tazkira-rail {
+            position: absolute;
+            top: 18px;
+            left: 10px;
+            bottom: 18px;
+            width: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+        }
+
+        .id-card-tazkira-rail span {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            font-size: 10px;
+            line-height: 1.2;
+            font-weight: 800;
+            letter-spacing: 1px;
+            color: rgba(255, 246, 221, 0.94);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+            white-space: nowrap;
+        }
+
         .id-card-bismillah {
             margin: 0 0 8px;
             font-size: 13px;
@@ -205,6 +260,7 @@
             margin-bottom: 12px;
             position: relative;
             z-index: 4;
+            width: 100%;
         }
 
         .id-card-photo {
@@ -238,6 +294,35 @@
             width: 56px;
             height: 56px;
             color: #94a3b8;
+        }
+
+        .id-card-qr-card {
+            width: 92px;
+            padding: 5px;
+            border-radius: 14px;
+            border: 1px solid rgba(200, 155, 60, 0.34);
+            background: rgba(255, 253, 248, 0.96);
+            box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
+            text-align: center;
+            align-self: flex-end;
+            flex-shrink: 0;
+        }
+
+        .id-card-qr-card img {
+            display: block;
+            width: 80px;
+            height: 80px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 8px;
+        }
+
+        .id-card-qr-card span {
+            display: block;
+            font-size: 9px;
+            line-height: 1.35;
+            color: var(--card-primary-deep);
+            font-weight: 800;
         }
 
         .id-card-body {
@@ -311,8 +396,17 @@
             color: var(--card-primary);
         }
 
+        .id-card-panel-main {
+            display: flex;
+            direction: rtl;
+            align-items: flex-end;
+            gap: 10px;
+        }
+
         .id-card-info {
             font-size: 13px;
+            flex: 1;
+            direction: rtl;
         }
 
         .id-card-row {
@@ -423,6 +517,9 @@ $studentIdValue = (int) ($student['id'] ?? 0);
 $issueDateLabel = '';
 $expiryDateLabel = '';
 $enrollmentYearLabel = trim((string) ($student['enrollment_year'] ?? ''));
+$studentNameValue = trim((string) ($student['name'] ?? ''));
+$fatherNameValue = trim((string) ($student['father_name'] ?? ''));
+$tazkiraValue = trim((string) ($student['id_number'] ?? ''));
 $formatCardDate = static function (string $date): string {
     $timestamp = strtotime($date);
     if ($timestamp === false) {
@@ -433,6 +530,18 @@ $formatCardDate = static function (string $date): string {
 };
 $issueDateLabel = $formatCardDate($issueDateText);
 $expiryDateLabel = $formatCardDate($expiryDateText);
+$qrPayloadLines = [
+    'دارالعلوم عالی الحاج سید منصور نادری',
+    'آی دی شاگرد: ' . to_persian_number((string) $studentIdValue),
+    'نام: ' . ($studentNameValue !== '' ? $studentNameValue : '-'),
+    'نام پدر: ' . ($fatherNameValue !== '' ? $fatherNameValue : '-'),
+    'سطح تحصیلی: ' . ($levelName !== '' ? $levelName : '-'),
+    'نمبر تذکره: ' . ($tazkiraValue !== '' ? to_persian_number($tazkiraValue) : '-'),
+    'تاریخ صدور: ' . $issueDateLabel,
+    'تاریخ اعتبار: ' . $expiryDateLabel,
+];
+$qrPayload = implode("\n", $qrPayloadLines);
+$qrCodeUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=140x140&margin=0&format=png&data=' . rawurlencode($qrPayload);
 ?>
 <div class="id-actions">
     <button type="button" class="btn btn-print" onclick="window.print()">چاپ مستقیم</button>
@@ -441,6 +550,12 @@ $expiryDateLabel = $formatCardDate($expiryDateText);
 
 <div id="printCard" class="id-card-shell">
     <div class="id-card-header">
+        <div class="id-card-student-id-rail">
+            <span>آی دی نمبر :<?= e(to_persian_number((string) $studentIdValue)) ?></span>
+        </div>
+        <div class="id-card-tazkira-rail">
+            <span>نمبر تذکره :<?= e(to_persian_number((string) (($student['id_number'] ?? '') !== '' ? (string) $student['id_number'] : '-'))) ?></span>
+        </div>
         <div class="id-card-logo-circle">
             <img src="<?= e(url('/assets/images/logo.jpg')) ?>" alt="لوگو" onerror="this.style.display='none';">
         </div>
@@ -478,23 +593,27 @@ $expiryDateLabel = $formatCardDate($expiryDateText);
         </div>
 
         <div class="id-card-panel">
-
-            <div class="id-card-info">
-                <div class="id-card-row">
-                    <span class="label">سطح تحصیلی</span>
-                    <span class="sep">:</span>
-                    <span class="value"><?= e($levelName) ?></span>
+            <div class="id-card-panel-main">
+                <div class="id-card-info">
+                    <div class="id-card-row">
+                        <span class="label">سطح تحصیلی</span>
+                        <span class="sep">:</span>
+                        <span class="value"><?= e($levelName) ?></span>
+                    </div>
+                   
+                    <div class="id-card-row">
+                        <span class="label">تاریخ صدور</span>
+                        <span class="sep">:</span>
+                        <span class="value"><?= $issueDateLabel ?></span>
+                    </div>
+                    <div class="id-card-row">
+                        <span class="label">تاریخ اعتبار</span>
+                        <span class="sep">:</span>
+                        <span class="value"><?= $expiryDateLabel ?></span>
+                    </div>
                 </div>
-               
-                <div class="id-card-row">
-                    <span class="label">تاریخ صدور</span>
-                    <span class="sep">:</span>
-                    <span class="value"><?= $issueDateLabel ?></span>
-                </div>
-                <div class="id-card-row">
-                    <span class="label">تاریخ اعتبار</span>
-                    <span class="sep">:</span>
-                    <span class="value"><?= $expiryDateLabel ?></span>
+                <div class="id-card-qr-card">
+                    <img src="<?= e($qrCodeUrl) ?>" alt="QR معلومات شاگرد" loading="eager" referrerpolicy="no-referrer">
                 </div>
             </div>
              <div class="id-card-footer">

@@ -58,7 +58,7 @@ final class AuthController extends Controller
         $target = (string) ($_SESSION['_intended'] ?? '/dashboard');
         unset($_SESSION['_intended']);
 
-        if ($target === '' || !str_starts_with($target, '/') || $target === '/login') {
+        if (!is_safe_post_login_path($target)) {
             $target = '/dashboard';
         }
 

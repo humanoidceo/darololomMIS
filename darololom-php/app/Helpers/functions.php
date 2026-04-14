@@ -152,6 +152,48 @@ function auth_logout(): void
     unset($_SESSION['_intended']);
 }
 
+function request_accepts_html(): bool
+{
+    $accept = strtolower(trim((string) ($_SERVER['HTTP_ACCEPT'] ?? '')));
+    if ($accept === '') {
+        return true;
+    }
+
+    return str_contains($accept, 'text/html') || str_contains($accept, 'application/xhtml+xml');
+}
+
+function is_safe_post_login_path(string $path): bool
+{
+    $path = trim($path);
+    if ($path === '' || !str_starts_with($path, '/')) {
+        return false;
+    }
+
+    if ($path === '/login' || str_starts_with($path, '/api/')) {
+        return false;
+    }
+
+    return !preg_match('#\.[a-z0-9]{1,8}$#i', $path);
+}
+
+function should_remember_intended_path(string $method, string $path): bool
+{
+    if (strtoupper($method) !== 'GET') {
+        return false;
+    }
+
+    if (!request_accepts_html()) {
+        return false;
+    }
+
+    $fetchDest = strtolower(trim((string) ($_SERVER['HTTP_SEC_FETCH_DEST'] ?? '')));
+    if ($fetchDest !== '' && $fetchDest !== 'document') {
+        return false;
+    }
+
+    return is_safe_post_login_path($path);
+}
+
 function is_super_admin(): bool
 {
     $user = auth_user();

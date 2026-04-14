@@ -17,7 +17,7 @@
             border-radius: 10px;
             padding: 10px 18px;
             color: #fff;
-            font-size: 15px;
+            font-size: 14px;
             cursor: pointer;
             text-decoration: none;
         }
@@ -32,33 +32,69 @@
             width: 440px;
             height: 620px;
             margin: 0 auto;
-            background: #fff;
-            box-shadow: 0 10px 35px rgba(15, 23, 42, 0.18);
+            background:
+                radial-gradient(circle at top left, rgba(232, 87, 42, 0.16), transparent 34%),
+                radial-gradient(circle at bottom right, rgba(15, 118, 110, 0.12), transparent 28%),
+                linear-gradient(180deg, #fffaf5 0%, #ffffff 100%);
+            border-radius: 28px;
+            border: 1px solid rgba(232, 87, 42, 0.18);
+            box-shadow: 0 18px 45px rgba(15, 23, 42, 0.16);
             overflow: hidden;
             direction: rtl;
+            position: relative;
+        }
+        .id-card-shell::before,
+        .id-card-shell::after {
+            content: "";
+            position: absolute;
+            border-radius: 999px;
+            pointer-events: none;
+        }
+        .id-card-shell::before {
+            width: 180px;
+            height: 180px;
+            top: -74px;
+            left: -54px;
+            background: rgba(232, 87, 42, 0.08);
+        }
+        .id-card-shell::after {
+            width: 160px;
+            height: 160px;
+            bottom: 76px;
+            right: -60px;
+            background: rgba(15, 118, 110, 0.08);
         }
         .id-card-header {
-            background-color: #E8572A;
-            padding: 24px;
-            padding-bottom: 100px;
+            background: linear-gradient(135deg, #b93817 0%, #e8572a 58%, #ffb04d 100%);
+            padding: 22px 24px 96px;
             position: relative;
+            overflow: hidden;
+        }
+        .id-card-header::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background:
+                linear-gradient(120deg, rgba(255,255,255,0.12), transparent 38%),
+                radial-gradient(circle at top left, rgba(255,255,255,0.18), transparent 36%);
         }
         .id-card-logo-circle {
             position: absolute;
-            top: 32px;
-            right: 40px;
-            width: 56px;
-            height: 56px;
+            top: 24px;
+            right: 24px;
+            width: 52px;
+            height: 52px;
             border-radius: 999px;
             background: #fff;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+            box-shadow: 0 10px 26px rgba(0, 0, 0, 0.16);
+            z-index: 1;
         }
         .id-card-logo-circle img {
-            width: 48px;
-            height: 48px;
+            width: 44px;
+            height: 44px;
             object-fit: contain;
             border-radius: 999px;
         }
@@ -66,35 +102,43 @@
             margin-top: 8px;
             text-align: center;
             color: #fff;
+            position: relative;
+            z-index: 1;
         }
         .id-card-title h3 {
             margin: 0;
-            font-size: 36px;
+            font-size: 24px;
             font-weight: 800;
-            line-height: 1.4;
+            line-height: 1.35;
+        }
+        .id-card-title p {
+            margin: 8px 0 0;
+            font-size: 12px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.92);
         }
         .id-card-curve {
-            margin-top: -40px;
+            margin-top: -34px;
         }
         .id-card-photo-wrap {
             display: flex;
             justify-content: center;
-            margin-top: -100px;
-            margin-bottom: 20px;
+            margin-top: -88px;
+            margin-bottom: 14px;
             position: relative;
             z-index: 4;
         }
         .id-card-photo {
-            width: 145px;
-            height: 145px;
-            border-radius: 999px;
-            border: 5px solid #fff;
-            background: #f3f4f6;
+            width: 126px;
+            height: 126px;
+            border-radius: 28px;
+            border: 4px solid #fff;
+            background: linear-gradient(180deg, #f8fafc, #e5e7eb);
             overflow: hidden;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,.2);
+            box-shadow: 0 16px 38px rgba(15, 23, 42, 0.18);
         }
         .id-card-photo img {
             width: 100%;
@@ -102,41 +146,75 @@
             object-fit: cover;
         }
         .id-card-photo svg {
-            width: 80px;
-            height: 80px;
+            width: 58px;
+            height: 58px;
             color: #9ca3af;
         }
         .id-card-body {
-            padding: 0 32px 24px;
-            background: #fff;
-            height: calc(100% - 229px);
+            padding: 0 22px 18px;
+            background: transparent;
+            height: calc(100% - 208px);
             display: flex;
             flex-direction: column;
         }
         .id-card-name {
             text-align: center;
-            margin-bottom: 24px;
+            margin-bottom: 14px;
         }
         .id-card-name h2 {
             margin: 0;
-            font-size: 44px;
-            color: #E8572A;
+            font-size: 26px;
+            color: #b93817;
             font-weight: 900;
             line-height: 1.2;
         }
+        .id-card-name p {
+            margin: 6px 0 0;
+            font-size: 12px;
+            color: #475569;
+            font-weight: 700;
+        }
+        .id-card-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 5px 12px;
+            margin-top: 10px;
+            border-radius: 999px;
+            background: rgba(232, 87, 42, 0.1);
+            color: #b93817;
+            font-size: 11px;
+            font-weight: 800;
+            border: 1px solid rgba(232, 87, 42, 0.15);
+        }
+        .id-card-panel {
+            background: rgba(255, 255, 255, 0.92);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 20px;
+            padding: 14px 14px 12px;
+            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+        }
         .id-card-info {
-            font-size: 27px;
+            font-size: 14px;
         }
         .id-card-row {
             display: flex;
             align-items: flex-start;
-            gap: 8px;
-            margin-bottom: 8px;
+            gap: 6px;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed rgba(148, 163, 184, 0.45);
+        }
+        .id-card-row:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: 0;
         }
         .id-card-row .label {
-            min-width: 140px;
-            color: #1f2937;
-            font-weight: 600;
+            min-width: 94px;
+            color: #64748b;
+            font-size: 12px;
+            font-weight: 700;
         }
         .id-card-row .sep {
             color: #111827;
@@ -145,15 +223,52 @@
         .id-card-row .value {
             color: #111827;
             font-weight: 700;
+            flex: 1;
+            line-height: 1.6;
+        }
+        .id-card-meta {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            margin-top: 12px;
+        }
+        .id-card-meta-box {
+            background: linear-gradient(180deg, rgba(248, 250, 252, 0.98), rgba(241, 245, 249, 0.94));
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            border-radius: 16px;
+            padding: 10px 12px;
+            text-align: center;
+        }
+        .id-card-meta-box .meta-label {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #64748b;
+        }
+        .id-card-meta-box .meta-value {
+            display: block;
+            font-size: 13px;
+            font-weight: 800;
+            color: #0f172a;
+            line-height: 1.5;
         }
         .id-card-footer {
             margin-top: auto;
-            background-color: #E8572A;
-            color: #fff;
+            background: linear-gradient(135deg, #0f766e 0%, #1d4ed8 100%);
+            color: #f8fafc;
             text-align: center;
-            padding: 12px;
-            font-size: 18px;
-            font-weight: 500;
+            padding: 14px 18px;
+            border-radius: 18px;
+            font-size: 11px;
+            font-weight: 700;
+            line-height: 1.9;
+            letter-spacing: 0.1px;
+        }
+        .id-card-footer strong {
+            display: block;
+            font-size: 12px;
+            margin-bottom: 2px;
         }
 
         @media print {
@@ -168,6 +283,17 @@
 $imagePath = trim((string) ($student['image_path'] ?? ''));
 $issueDateText = trim((string) ($issueDate ?? date('Y-m-d')));
 $expiryDateText = trim((string) ($expiryDate ?? date('Y-m-d', strtotime('+1 year'))));
+$levelName = trim((string) ($student['level_name'] ?? 'نامشخص'));
+$validityYearsValue = (int) ($validityYears ?? (((string) ($student['level_code'] ?? '') === 'aali') ? 2 : 3));
+$schoolAddress = 'چهارراهی پروژه تایمنی، جوار مسجد جامع الحاج سید منصور نادری، کابل';
+$formatCardDate = static function (string $date): string {
+    $timestamp = strtotime($date);
+    if ($timestamp === false) {
+        return e($date);
+    }
+
+    return to_persian_number(date('Y / m / d', $timestamp));
+};
 ?>
 <div class="id-actions">
     <button type="button" class="btn btn-print" onclick="window.print()">چاپ مستقیم</button>
@@ -180,8 +306,8 @@ $expiryDateText = trim((string) ($expiryDate ?? date('Y-m-d', strtotime('+1 year
             <img src="<?= e(url('/assets/images/logo.jpg')) ?>" alt="لوگو" onerror="this.style.display='none';">
         </div>
         <div class="id-card-title">
-            <h3>دارالعلوم عالی</h3>
-            <h3>الحاج سید منصور نادری</h3>
+          <h4>دارالعلوم عالی الحاج سید منصور نادری</h4>
+            <p>کارت شناسایی شاگردان</p>
         </div>
     </div>
 
@@ -206,39 +332,41 @@ $expiryDateText = trim((string) ($expiryDate ?? date('Y-m-d', strtotime('+1 year
     <div class="id-card-body">
         <div class="id-card-name">
             <h2><?= e((string) ($student['name'] ?? 'نام دانش‌آموز')) ?></h2>
+            <p>فرزند <?= e((string) (($student['father_name'] ?? '') !== '' ? $student['father_name'] : '-')) ?></p>
         </div>
 
-        <div class="id-card-info">
-            <div class="id-card-row">
-                <span class="label">صنف</span>
-                <span class="sep">:</span>
-                <span class="value"><?= e((string) ($student['class_name'] ?? '-')) ?></span>
+        <div class="id-card-panel">
+            <div class="id-card-info">
+                <div class="id-card-row">
+                    <span class="label">سطح تحصیلی</span>
+                    <span class="sep">:</span>
+                    <span class="value"><?= e($levelName) ?></span>
+                </div>
+                <div class="id-card-row">
+                    <span class="label">نمبر تذکره</span>
+                    <span class="sep">:</span>
+                    <span class="value"><?= e((string) (($student['id_number'] ?? '') !== '' ? $student['id_number'] : '-')) ?></span>
+                </div>
+               
+                <div class="id-card-row">
+                    <span class="label">تاریخ صدور</span>
+                    <span class="sep">:</span>
+                    <span class="value"><?= $formatCardDate($issueDateText) ?></span>
+                </div>
+                <div class="id-card-row">
+                    <span class="label">تاریخ اعتبار</span>
+                    <span class="sep">:</span>
+                    <span class="value"><?= $formatCardDate($expiryDateText) ?></span>
+                </div>
+                 <div class="id-card-footer">
+            <?= e($schoolAddress) ?>
+        </div>
             </div>
-            <div class="id-card-row">
-                <span class="label">نام پدر</span>
-                <span class="sep">:</span>
-                <span class="value"><?= e((string) ($student['father_name'] ?? '-')) ?></span>
-            </div>
-            <div class="id-card-row">
-                <span class="label">شماره تماس</span>
-                <span class="sep">:</span>
-                <span class="value"><?= e((string) (($student['mobile_number'] ?? '') !== '' ? $student['mobile_number'] : '-')) ?></span>
-            </div>
-            <div class="id-card-row">
-                <span class="label">تاریخ صدور</span>
-                <span class="sep">:</span>
-                <span class="value"><?= e($issueDateText) ?></span>
-            </div>
-            <div class="id-card-row">
-                <span class="label">تاریخ انقضا</span>
-                <span class="sep">:</span>
-                <span class="value"><?= e($expiryDateText) ?></span>
-            </div>
+
+        
         </div>
 
-        <div class="id-card-footer">
-            چهارراهی پروژه تایمنی، جوار مسجد جامع الحاج سید منصور نادری
-        </div>
+        
     </div>
 </div>
 </body>

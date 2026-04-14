@@ -521,9 +521,10 @@ final class StudentsController extends Controller
         $id = $this->intParam($params, 'id');
         $db = Database::connection();
 
-        $stmt = $db->prepare('SELECT s.*, sc.name AS class_name
+        $stmt = $db->prepare('SELECT s.*, sc.name AS class_name, l.name AS level_name, l.code AS level_code
             FROM students s
             LEFT JOIN school_classes sc ON sc.id = s.school_class_id
+            LEFT JOIN study_levels l ON l.id = s.level_id
             WHERE s.id = :id
             LIMIT 1');
         $stmt->execute(['id' => $id]);
@@ -535,13 +536,15 @@ final class StudentsController extends Controller
         }
 
         $issueDate = date('Y-m-d');
-        $expiryDate = date('Y-m-d', strtotime('+1 year'));
+        $validityYears = ((string) ($student['level_code'] ?? '') === 'aali') ? 2 : 3;
+        $expiryDate = date('Y-m-d', strtotime('+' . $validityYears . ' years'));
 
         $this->render('students/id_card', [
             'title' => 'کارت شناسایی دانش‌آموز',
             'student' => $student,
             'issueDate' => $issueDate,
             'expiryDate' => $expiryDate,
+            'validityYears' => $validityYears,
             'use_layout' => false,
         ]);
     }

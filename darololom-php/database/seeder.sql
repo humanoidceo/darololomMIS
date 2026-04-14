@@ -13,7 +13,7 @@ INSERT INTO users (
     'Super Admin',
     'superadmin',
     'modeer@modeer.com',
-    '$2y$10$.f6HrIM8rztM7o2zsTV2uOp0911cYxmRiP3YhacmoyVkEeV0oll7u',
+    '$2y$10$oLxxN7MHRNerYILF3HHfP.iWKoRUe2adEWpW7B4pNrlQ9dMuwD2uK',
     'super_admin',
     '["access_students","register_students","manage_students","access_teachers","register_teachers","manage_teachers","manage_classes","manage_subjects","manage_grades","manage_contracts","manage_users"]',
     1,

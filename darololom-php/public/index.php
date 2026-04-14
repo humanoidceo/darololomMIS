@@ -34,7 +34,7 @@ $publicRoutes = [
 ];
 
 if (!in_array($method . ':' . $path, $publicRoutes, true) && !auth_check()) {
-    if ($method === 'GET') {
+    if (should_remember_intended_path($method, $path)) {
         $_SESSION['_intended'] = $path;
     }
     header('Location: ' . url('/login'));

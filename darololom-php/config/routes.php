@@ -17,6 +17,8 @@ return static function (Router $router): void {
     $router->get('/users', 'UsersController@index');
     $router->get('/users/create', 'UsersController@create');
     $router->post('/users/store', 'UsersController@store');
+    $router->get('/website-content', 'WebsiteContentController@index');
+    $router->post('/website-content/update', 'WebsiteContentController@update');
 
     $router->get('/students', 'StudentsController@index');
     $router->get('/students/create', 'StudentsController@create');

@@ -1,11 +1,18 @@
 <?php
 declare(strict_types=1);
 
+use App\Core\WebsiteContent;
+
 $currentUser = auth_user();
 $isLoggedIn = $currentUser !== null;
 $currentRole = (string) ($currentUser['role'] ?? '');
 $isStudentRole = $currentRole === 'student';
 $isTeacherRole = $currentRole === 'teacher';
+$websiteContent = WebsiteContent::load();
+$footerAbout = (array) ($websiteContent['about'] ?? []);
+$footerContact = (array) ($websiteContent['contact'] ?? []);
+$footerIntro = (string) (($footerAbout['lead'] ?? '') !== '' ? $footerAbout['lead'] : 'دارالعلوم عالی الحاج سید منصور نادری با ساختار منظم آموزشی و اداری، محیطی مناسب برای رشد علمی و اخلاقی شاگردان فراهم ساخته و خدمات خود را به شکل روشن و حرفه‌ای معرفی می‌کند.');
+$footerAddress = (string) (($footerContact['address'] ?? '') !== '' ? $footerContact['address'] : 'جوار مسجد الحاج سید منصور نادری، چهارراهی پروژه تایمنی، کابل، افغانستان');
 ?>
 <!doctype html>
 <html lang="fa" dir="rtl">
@@ -31,6 +38,7 @@ $isTeacherRole = $currentRole === 'teacher';
     <link rel="stylesheet" href="<?= e(url('/assets/css/modules/contracts.css')) ?>">
     <link rel="stylesheet" href="<?= e(url('/assets/css/modules/auth.css')) ?>">
     <link rel="stylesheet" href="<?= e(url('/assets/css/modules/users.css')) ?>">
+    <link rel="stylesheet" href="<?= e(url('/assets/css/modules/website-content.css')) ?>">
 </head>
 <body id="top" class="rtl-body">
     <section class="preloader">
@@ -95,6 +103,9 @@ $isTeacherRole = $currentRole === 'teacher';
                             <?php if (can('manage_users')): ?>
                                 <li><a href="<?= e(url('/users')) ?>">مدیریت کاربران</a></li>
                             <?php endif; ?>
+                            <?php if (is_super_admin()): ?>
+                                <li><a href="<?= e(url('/website-content')) ?>">ادیت محتوای وبسایت</a></li>
+                            <?php endif; ?>
                         <?php endif; ?>
                         <li class="dropdown nav-user-dropdown">
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
@@ -146,7 +157,7 @@ $isTeacherRole = $currentRole === 'teacher';
                     <div class="footer-thumb system-footer-card">
                         <h4>معرفی کوتاه</h4>
                         <p>
-                            دارالعلوم عالی الحاج سید منصور نادری با ساختار منظم آموزشی و اداری، محیطی مناسب برای رشد علمی و اخلاقی شاگردان فراهم ساخته و خدمات خود را به شکل روشن و حرفه‌ای معرفی می‌کند.
+                            <?= e($footerIntro) ?>
                         </p>
                         <div class="system-footer-tags">
                             <span>آموزش منظم</span>
@@ -183,7 +194,7 @@ $isTeacherRole = $currentRole === 'teacher';
                 <div class="col-lg-5 col-md-12 col-sm-12">
                     <div class="footer-thumb system-footer-card">
                         <h4>موقعیت دارالعلوم</h4>
-                        <p class="system-footer-contact-text">جوار مسجد الحاج سید منصور نادری، چهارراهی پروژه تایمنی، کابل، افغانستان</p>
+                        <p class="system-footer-contact-text"><?= e($footerAddress) ?></p>
                         <div class="system-footer-map-wrap">
                             <iframe
                                 class="system-footer-map"

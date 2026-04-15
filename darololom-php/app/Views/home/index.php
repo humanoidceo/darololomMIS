@@ -1,11 +1,18 @@
+<?php
+$homeContent = is_array($homeContent ?? null) ? $homeContent : [];
+$aboutContent = is_array($aboutContent ?? null) ? $aboutContent : [];
+$contactContent = is_array($contactContent ?? null) ? $contactContent : [];
+$aboutPoints = is_array($aboutContent['points'] ?? null) ? $aboutContent['points'] : [];
+?>
+
 <section class="home-hero" id="top">
     <div class="row home-hero-row">
         <div class="col-lg-6 col-md-6 col-sm-12">
             <div class="home-hero-copy wow fadeInUp" data-wow-delay="0.1s">
-                <span class="home-kicker">دارالعلوم عالی الحاج سید منصور نادری</span>
-                <h1>مرکز آموزشی منظم برای رشد علمی، اخلاقی و معرفی حرفه‌ای فعالیت‌ها</h1>
+                <span class="home-kicker"><?= e((string) ($homeContent['hero_kicker'] ?? 'دارالعلوم عالی الحاج سید منصور نادری')) ?></span>
+                <h1><?= e((string) ($homeContent['hero_title'] ?? 'مرکز آموزشی منظم برای رشد علمی، اخلاقی و معرفی حرفه‌ای فعالیت‌ها')) ?></h1>
                 <p>
-                    این وبسایت برای معرفی دارالعلوم، دسترسی عمومی به مقالات، نمایش فعالیت‌های آموزشی و ایجاد ارتباط روشن و حرفه‌ای با مراجعین و علاقه‌مندان طراحی شده است.
+                    <?= e((string) ($homeContent['hero_text'] ?? 'این وبسایت برای معرفی دارالعلوم، دسترسی عمومی به مقالات، نمایش فعالیت‌های آموزشی و ایجاد ارتباط روشن و حرفه‌ای با مراجعین و علاقه‌مندان طراحی شده است.')) ?>
                 </p>
               
                 <div class="home-hero-actions">
@@ -67,27 +74,26 @@
     <div class="row home-about-row">
         <div class="col-lg-5 col-md-5 col-sm-12">
             <div class="home-about-image-stack wow fadeInUp" data-wow-delay="0.1s">
-                <img src="<?= e(file_url('/assets/images/chiefwithallstaff.jpg')) ?>" alt="کارمندان دارالعلوم" class="home-about-main-image">
-                <img src="<?= e(file_url('/assets/images/allstaff.jpg')) ?>" alt="تیم دارالعلوم" class="home-about-secondary-image">
+                <img src="<?= e(file_url((string) ($aboutContent['main_image'] ?? '/assets/images/chiefwithallstaff.jpg'))) ?>" alt="<?= e((string) ($aboutContent['main_image_alt'] ?? 'کارمندان دارالعلوم')) ?>" class="home-about-main-image">
+                <img src="<?= e(file_url((string) ($aboutContent['secondary_image'] ?? '/assets/images/allstaff.jpg'))) ?>" alt="<?= e((string) ($aboutContent['secondary_image_alt'] ?? 'تیم دارالعلوم')) ?>" class="home-about-secondary-image">
             </div>
         </div>
         <div class="col-lg-7 col-md-7 col-sm-12">
             <div class="home-about-copy wow fadeInUp" data-wow-delay="0.2s">
                 <div class="section-title">
-                    <h2>درباره ما</h2>
-                    <p class="home-section-lead">دارالعلوم با رویکرد آموزشی، اخلاقی و اداری منظم، محیطی سالم و روشن برای رشد علمی شاگردان فراهم می‌سازد.</p>
+                    <h2><?= e((string) ($aboutContent['title'] ?? 'درباره ما')) ?></h2>
+                    <p class="home-section-lead"><?= e((string) ($aboutContent['lead'] ?? 'دارالعلوم با رویکرد آموزشی، اخلاقی و اداری منظم، محیطی سالم و روشن برای رشد علمی شاگردان فراهم می‌سازد.')) ?></p>
                 </div>
                 <p>
-                    دارالعلوم عالی الحاج سید منصور نادری یک نهاد آموزشی متعهد به تربیه نسل آگاه، منظم و مسئولیت‌پذیر است. این مرکز با استفاده از کادر علمی مجرب و ساختار اداری منظم، تلاش می‌کند خدمات آموزشی را با کیفیت بهتر و دسترسی روشن‌تر ارائه نماید.
+                    <?= e((string) ($aboutContent['paragraph_1'] ?? 'دارالعلوم عالی الحاج سید منصور نادری یک نهاد آموزشی متعهد به تربیه نسل آگاه، منظم و مسئولیت‌پذیر است. این مرکز با استفاده از کادر علمی مجرب و ساختار اداری منظم، تلاش می‌کند خدمات آموزشی را با کیفیت بهتر و دسترسی روشن‌تر ارائه نماید.')) ?>
                 </p>
                 <p>
-                    تمرکز ما بر آموزش مؤثر، انضباط آموزشی، شفافیت در مدیریت و فراهم‌سازی بستر مناسب برای دسترسی شاگردان و اساتید به منابع علمی است. صفحه مقالات نیز بخشی از همین رویکرد برای اشتراک دانش و محتوای علمی با مردم می‌باشد.
+                    <?= e((string) ($aboutContent['paragraph_2'] ?? 'تمرکز ما بر آموزش مؤثر، انضباط آموزشی، شفافیت در مدیریت و فراهم‌سازی بستر مناسب برای دسترسی شاگردان و اساتید به منابع علمی است. صفحه مقالات نیز بخشی از همین رویکرد برای اشتراک دانش و محتوای علمی با مردم می‌باشد.')) ?>
                 </p>
                 <div class="home-about-points">
-                    <span>کادر علمی متعهد</span>
-                    <span>مدیریت منظم اطلاعات</span>
-                    <span>محیط آموزشی سالم</span>
-                    <span>دسترسی عمومی به مقالات</span>
+                    <?php foreach ($aboutPoints as $point): ?>
+                        <span><?= e((string) $point) ?></span>
+                    <?php endforeach; ?>
                 </div>
             </div>
         </div>
@@ -113,21 +119,21 @@
 
 <section class="home-contact-section" id="contact-us">
     <div class="section-title wow fadeInUp" data-wow-delay="0.1s">
-        <h2>تماس با ما</h2>
-        <p class="home-section-lead">برای دریافت معلومات بیشتر یا ایجاد ارتباط مستقیم با دارالعلوم، از این بخش استفاده کنید.</p>
+        <h2><?= e((string) ($contactContent['title'] ?? 'تماس با ما')) ?></h2>
+        <p class="home-section-lead"><?= e((string) ($contactContent['lead'] ?? 'برای دریافت معلومات بیشتر یا ایجاد ارتباط مستقیم با دارالعلوم، از این بخش استفاده کنید.')) ?></p>
     </div>
 
     <div class="row">
         <div class="col-lg-7 col-md-7 col-sm-12">
             <div class="news-thumb home-contact-card wow fadeInUp" data-wow-delay="0.1s">
                 <div class="news-info">
-                    <h3>راه‌های ارتباطی</h3>
+                    <h3><?= e((string) ($contactContent['intro_title'] ?? 'راه‌های ارتباطی')) ?></h3>
                     <p>
-                        برای دریافت معلومات بیشتر، پیگیری امور آموزشی و یا برقراری ارتباط رسمی، می‌توانید از راه‌های زیر با دارالعلوم در تماس شوید.
+                        <?= e((string) ($contactContent['intro_text'] ?? 'برای دریافت معلومات بیشتر، پیگیری امور آموزشی و یا برقراری ارتباط رسمی، می‌توانید از راه‌های زیر با دارالعلوم در تماس شوید.')) ?>
                     </p>
                     <div class="home-contact-list">
-                        <div><strong>آدرس:</strong> جوار مسجد الحاج سید منصور نادری، چهارراهی پروژه تایمنی، کابل، افغانستان</div>
-                        <div><strong>شماره تماس:</strong>۰۷۷۰۹۲۲۷۹۰</div>
+                        <div><strong>آدرس:</strong> <?= e((string) ($contactContent['address'] ?? 'جوار مسجد الحاج سید منصور نادری، چهارراهی پروژه تایمنی، کابل، افغانستان')) ?></div>
+                        <div><strong>شماره تماس:</strong> <?= e((string) ($contactContent['phone'] ?? '۰۷۷۰۹۲۲۷۹۰')) ?></div>
                     </div>
                 </div>
             </div>
@@ -135,7 +141,7 @@
         <div class="col-lg-5 col-md-5 col-sm-12">
             <div class="news-thumb home-contact-card home-contact-highlight wow fadeInUp" data-wow-delay="0.2s">
                 <div class="news-info">
-                    <h3>دسترسی سریع</h3>
+                    <h3><?= e((string) ($contactContent['quick_title'] ?? 'دسترسی سریع')) ?></h3>
                     <div class="home-contact-actions">
                         <a href="<?= e(url('/articles')) ?>" class="btn btn-default home-primary-btn">رفتن به مقالات</a>
                         <?php if (auth_check()): ?>

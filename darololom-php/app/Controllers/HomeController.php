@@ -5,30 +5,26 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Controller;
+use App\Core\WebsiteContent;
 
 final class HomeController extends Controller
 {
     public function index(array $params = []): void
     {
+        $websiteContent = WebsiteContent::load();
+        $homeContent = (array) ($websiteContent['home'] ?? []);
+        $aboutContent = (array) ($websiteContent['about'] ?? []);
+        $contactContent = (array) ($websiteContent['contact'] ?? []);
+
         $heroSlides = [
-            [
-                'image' => '/assets/images/chiefofdarolom.jpg',
-                'alt' => 'ریاست دارالعلوم',
-                'title' => 'آموزش دینی و عصری در یک فضای منظم و حرفه‌ای',
-                'text' => 'دارالعلوم عالی الحاج سید منصور نادری با تمرکز بر کیفیت آموزشی، انضباط اداری و رشد علمی نسل جوان فعالیت می‌کند.',
-            ],
-            [
-                'image' => '/assets/images/allstaff.jpg',
-                'alt' => 'کارمندان دارالعلوم',
-                'title' => 'همکاری منسجم میان اساتید و مدیریت',
-                'text' => 'تعهد، تجربه و هماهنگی کادر اداری و آموزشی، زیربنای خدمات پایدار و قابل اعتماد این مرکز است.',
-            ],
-            [
-                'image' => '/assets/images/duringexam.jpg',
-                'alt' => 'جریان امتحان',
-                'title' => 'ارزیابی دقیق و محیط آموزشی پویا',
-                'text' => 'فرآیندهای منظم درسی و امتحانی، زمینه رشد بهتر شاگردان و مدیریت شفاف اطلاعات آموزشی را فراهم می‌سازد.',
-            ],
+            ...array_map(static function (array $slide): array {
+                return [
+                    'image' => (string) ($slide['image'] ?? ''),
+                    'alt' => (string) ($slide['alt'] ?? ''),
+                    'title' => (string) ($slide['title'] ?? ''),
+                    'text' => (string) ($slide['text'] ?? ''),
+                ];
+            }, (array) ($homeContent['slides'] ?? [])),
         ];
 
         $featureCards = [
@@ -39,13 +35,13 @@ final class HomeController extends Controller
                 'label' => 'مشاهده مقالات',
             ],
             [
-                'title' => 'درباره ما',
+                'title' => (string) ($aboutContent['title'] ?? 'درباره ما'),
                 'text' => 'با چشم‌انداز، ارزش‌ها و ساختار آموزشی دارالعلوم بیشتر آشنا شوید و مسیر فعالیت‌های علمی ما را ببینید.',
                 'link' => '#about-us',
                 'label' => 'رفتن به درباره ما',
             ],
             [
-                'title' => 'تماس با ما',
+                'title' => (string) ($contactContent['title'] ?? 'تماس با ما'),
                 'text' => 'راه‌های ارتباطی، آدرس و معلومات ضروری برای ارتباط مستقیم با دارالعلوم در این بخش گردآوری شده است.',
                 'link' => '#contact-us',
                 'label' => 'رفتن به تماس با ما',
@@ -63,6 +59,9 @@ final class HomeController extends Controller
 
         $this->render('home/index', [
             'title' => 'خانه',
+            'homeContent' => $homeContent,
+            'aboutContent' => $aboutContent,
+            'contactContent' => $contactContent,
             'heroSlides' => $heroSlides,
             'featureCards' => $featureCards,
             'galleryItems' => $galleryItems,

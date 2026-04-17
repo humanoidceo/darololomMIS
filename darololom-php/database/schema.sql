@@ -226,6 +226,20 @@ CREATE TABLE IF NOT EXISTS books (
     CONSTRAINT fk_books_created_by FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS theses (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    student_name VARCHAR(255) NOT NULL,
+    advisor_name VARCHAR(255) NOT NULL,
+    completion_year SMALLINT UNSIGNED NOT NULL,
+    abstract_text TEXT NOT NULL,
+    created_by INT UNSIGNED NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_theses_student_name (student_name),
+    INDEX idx_theses_advisor_name (advisor_name),
+    INDEX idx_theses_completion_year (completion_year),
+    CONSTRAINT fk_theses_created_by FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
 SET @has_teachers_current_street := (
     SELECT COUNT(*)
     FROM information_schema.columns

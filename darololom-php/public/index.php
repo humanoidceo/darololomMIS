@@ -32,11 +32,13 @@ $publicRoutes = [
     'POST:/login',
     'GET:/articles',
     'GET:/library',
+    'GET:/theses',
 ];
 
 $isPublicDynamicRoute = $method === 'GET'
     && (
         preg_match('#^/library/[0-9]+$#', $path) === 1
+        || preg_match('#^/theses/[0-9]+$#', $path) === 1
     );
 
 if (!in_array($method . ':' . $path, $publicRoutes, true) && !$isPublicDynamicRoute && !auth_check()) {

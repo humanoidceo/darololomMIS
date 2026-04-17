@@ -52,6 +52,11 @@ return static function (Router $router): void {
     $router->post('/library/store', 'BooksController@store');
     $router->post('/library/{id}/delete', 'BooksController@destroy');
     $router->get('/library/{id}', 'BooksController@show');
+    $router->get('/theses', 'ThesesController@publicIndex');
+    $router->get('/theses/manage', 'ThesesController@index');
+    $router->post('/theses/store', 'ThesesController@store');
+    $router->post('/theses/{id}/delete', 'ThesesController@destroy');
+    $router->get('/theses/{id}', 'ThesesController@show');
 
     $router->get('/classes', 'ClassesController@index');
     $router->get('/classes/create', 'ClassesController@create');

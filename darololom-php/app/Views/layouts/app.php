@@ -35,6 +35,7 @@ $footerAddress = (string) (($footerContact['address'] ?? '') !== '' ? $footerCon
     <link rel="stylesheet" href="<?= e(url('/assets/css/modules/subjects.css')) ?>">
     <link rel="stylesheet" href="<?= e(url('/assets/css/modules/articles.css')) ?>">
     <link rel="stylesheet" href="<?= e(url('/assets/css/modules/books.css')) ?>">
+    <link rel="stylesheet" href="<?= e(url('/assets/css/modules/theses.css')) ?>">
     <link rel="stylesheet" href="<?= e(url('/assets/css/modules/grades.css')) ?>">
     <link rel="stylesheet" href="<?= e(url('/assets/css/modules/contracts.css')) ?>">
     <link rel="stylesheet" href="<?= e(url('/assets/css/modules/auth.css')) ?>">
@@ -55,6 +56,7 @@ $footerAddress = (string) (($footerContact['address'] ?? '') !== '' ? $footerCon
                         <a href="<?= e(url('/')) ?>">خانه</a>
                         <a href="<?= e(url('/articles')) ?>">مقالات</a>
                         <a href="<?= e(url('/library')) ?>">کتابخانه الکترونیکی</a>
+                        <a href="<?= e(url('/theses')) ?>">پایان‌نامه‌ها</a>
                         <a href="<?= e(url('/#about-us')) ?>">درباره ما</a>
                         <a href="<?= e(url('/#contact-us')) ?>">تماس با ما</a>
                     </nav>
@@ -107,6 +109,7 @@ $footerAddress = (string) (($footerContact['address'] ?? '') !== '' ? $footerCon
                             <?php endif; ?>
                             <?php if (is_super_admin()): ?>
                                 <li><a href="<?= e(url('/library/manage')) ?>">کتابخانه الکترونیکی</a></li>
+                                <li><a href="<?= e(url('/theses/manage')) ?>">پایان‌نامه‌ها</a></li>
                                 <li><a href="<?= e(url('/website-content')) ?>">ادیت محتوای وبسایت</a></li>
                             <?php endif; ?>
                         <?php endif; ?>
@@ -185,13 +188,16 @@ $footerAddress = (string) (($footerContact['address'] ?? '') !== '' ? $footerCon
                                 <li><a href="<?= e(url('/articles/manage')) ?>">مدیریت مقالات</a></li>
                                 <?php if (is_super_admin()): ?>
                                     <li><a href="<?= e(url('/library/manage')) ?>">مدیریت کتابخانه</a></li>
+                                    <li><a href="<?= e(url('/theses/manage')) ?>">مدیریت پایان‌نامه‌ها</a></li>
                                 <?php endif; ?>
                                 <li><a href="<?= e(url('/articles')) ?>">صفحه عمومی مقالات</a></li>
                                 <li><a href="<?= e(url('/library')) ?>">صفحه عمومی کتابخانه</a></li>
+                                <li><a href="<?= e(url('/theses')) ?>">صفحه عمومی پایان‌نامه‌ها</a></li>
                             <?php else: ?>
                                 <li><a href="<?= e(url('/')) ?>">خانه</a></li>
                                 <li><a href="<?= e(url('/articles')) ?>">مقالات</a></li>
                                 <li><a href="<?= e(url('/library')) ?>">کتابخانه الکترونیکی</a></li>
+                                <li><a href="<?= e(url('/theses')) ?>">پایان‌نامه‌ها</a></li>
                                 <li><a href="<?= e(url('/#about-us')) ?>">درباره ما</a></li>
                                 <li><a href="<?= e(url('/#contact-us')) ?>">تماس با ما</a></li>
                             <?php endif; ?>

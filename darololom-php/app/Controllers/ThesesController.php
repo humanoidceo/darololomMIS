@@ -13,13 +13,17 @@ final class ThesesController extends Controller
     public function publicIndex(array $params = []): void
     {
         $this->ensureThesesTable();
+        $searchQuery = $this->normalizeSearchQuery((string) ($_GET['q'] ?? ''));
+        [$whereSql, $searchBindings] = $this->buildSearchFilter($searchQuery);
 
         $page = max(1, (int) ($_GET['page'] ?? 1));
         $pageSize = 10;
         $offset = ($page - 1) * $pageSize;
 
         $db = Database::connection();
-        $countStmt = $db->query('SELECT COUNT(*) FROM theses');
+        $countStmt = $db->prepare('SELECT COUNT(*) FROM theses' . $whereSql);
+        $this->bindParams($countStmt, $searchBindings);
+        $countStmt->execute();
         $total = (int) $countStmt->fetchColumn();
         $totalPages = max(1, (int) ceil($total / $pageSize));
 
@@ -30,10 +34,11 @@ final class ThesesController extends Controller
 
         $stmt = $db->prepare(
             'SELECT *
-             FROM theses
+             FROM theses' . $whereSql . '
              ORDER BY created_at DESC, id DESC
              LIMIT :limit OFFSET :offset'
         );
+        $this->bindParams($stmt, $searchBindings);
         $stmt->bindValue(':limit', $pageSize, PDO::PARAM_INT);
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
@@ -45,6 +50,7 @@ final class ThesesController extends Controller
             'pageSize' => $pageSize,
             'total' => $total,
             'totalPages' => $totalPages,
+            'searchQuery' => $searchQuery,
         ]);
     }
 
@@ -73,6 +79,8 @@ final class ThesesController extends Controller
     {
         $this->onlySuperAdmin('تنها سوپر ادمین اجازه مدیریت پایان‌نامه‌ها را دارد.', '/dashboard');
         $this->ensureThesesTable();
+        $searchQuery = $this->normalizeSearchQuery((string) ($_GET['q'] ?? ''));
+        [$whereSql, $searchBindings] = $this->buildSearchFilter($searchQuery);
 
         $formData = $_SESSION['_old'] ?? [];
         clear_old();
@@ -82,7 +90,9 @@ final class ThesesController extends Controller
         $offset = ($page - 1) * $pageSize;
 
         $db = Database::connection();
-        $countStmt = $db->query('SELECT COUNT(*) FROM theses');
+        $countStmt = $db->prepare('SELECT COUNT(*) FROM theses' . $whereSql);
+        $this->bindParams($countStmt, $searchBindings);
+        $countStmt->execute();
         $total = (int) $countStmt->fetchColumn();
         $totalPages = max(1, (int) ceil($total / $pageSize));
 
@@ -93,10 +103,11 @@ final class ThesesController extends Controller
 
         $stmt = $db->prepare(
             'SELECT *
-             FROM theses
+             FROM theses' . $whereSql . '
              ORDER BY created_at DESC, id DESC
              LIMIT :limit OFFSET :offset'
         );
+        $this->bindParams($stmt, $searchBindings);
         $stmt->bindValue(':limit', $pageSize, PDO::PARAM_INT);
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
@@ -113,6 +124,7 @@ final class ThesesController extends Controller
             'oldAdvisorName' => (string) ($formData['advisor_name'] ?? ''),
             'oldYear' => (string) ($formData['completion_year'] ?? ''),
             'oldAbstract' => (string) ($formData['abstract_text'] ?? ''),
+            'searchQuery' => $searchQuery,
         ]);
     }
 
@@ -173,19 +185,20 @@ final class ThesesController extends Controller
         $this->onlySuperAdmin('تنها سوپر ادمین اجازه مدیریت پایان‌نامه‌ها را دارد.', '/dashboard');
         $this->csrfCheck();
         $this->ensureThesesTable();
+        $redirectUrl = $this->manageRedirectUrl();
 
         $id = $this->intParam($params, 'id');
         $thesis = $this->thesisById($id);
         if (!$thesis) {
             flash('error', 'پایان‌نامه مورد نظر پیدا نشد.');
-            $this->redirect('/theses/manage');
+            $this->redirect($redirectUrl);
         }
 
         $stmt = Database::connection()->prepare('DELETE FROM theses WHERE id = :id');
         $stmt->execute(['id' => $id]);
 
         flash('success', 'پایان‌نامه با موفقیت حذف شد.');
-        $this->redirect('/theses/manage');
+        $this->redirect($redirectUrl);
     }
 
     private function thesisById(int $id): ?array
@@ -200,6 +213,96 @@ final class ThesesController extends Controller
         $thesis = $stmt->fetch();
 
         return $thesis ?: null;
+    }
+
+    private function normalizeSearchQuery(string $query): string
+    {
+        $query = preg_replace('/\s+/u', ' ', trim($query));
+
+        return is_string($query) ? $query : '';
+    }
+
+    private function buildSearchFilter(string $searchQuery): array
+    {
+        if ($searchQuery === '') {
+            return ['', []];
+        }
+
+        $terms = preg_split('/\s+/u', $searchQuery, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        if ($terms === []) {
+            return ['', []];
+        }
+
+        $clauses = [];
+        $bindings = [];
+
+        foreach (array_values($terms) as $index => $term) {
+            $term = $this->normalizeSearchToken($term);
+            $studentParam = ':search_student_' . $index;
+            $advisorParam = ':search_advisor_' . $index;
+            $yearParam = ':search_year_' . $index;
+            $abstractParam = ':search_abstract_' . $index;
+            $clauses[] = '(student_name LIKE ' . $studentParam
+                . ' OR advisor_name LIKE ' . $advisorParam
+                . ' OR CAST(completion_year AS CHAR) LIKE ' . $yearParam
+                . ' OR abstract_text LIKE ' . $abstractParam . ')';
+            $bindings[$studentParam] = '%' . $term . '%';
+            $bindings[$advisorParam] = '%' . $term . '%';
+            $bindings[$yearParam] = '%' . $term . '%';
+            $bindings[$abstractParam] = '%' . $term . '%';
+        }
+
+        return [' WHERE ' . implode(' AND ', $clauses), $bindings];
+    }
+
+    private function bindParams(\PDOStatement $stmt, array $bindings): void
+    {
+        foreach ($bindings as $name => $value) {
+            $stmt->bindValue($name, $value, PDO::PARAM_STR);
+        }
+    }
+
+    private function normalizeSearchToken(string $value): string
+    {
+        return strtr($value, [
+            '۰' => '0',
+            '۱' => '1',
+            '۲' => '2',
+            '۳' => '3',
+            '۴' => '4',
+            '۵' => '5',
+            '۶' => '6',
+            '۷' => '7',
+            '۸' => '8',
+            '۹' => '9',
+            '٠' => '0',
+            '١' => '1',
+            '٢' => '2',
+            '٣' => '3',
+            '٤' => '4',
+            '٥' => '5',
+            '٦' => '6',
+            '٧' => '7',
+            '٨' => '8',
+            '٩' => '9',
+        ]);
+    }
+
+    private function manageRedirectUrl(): string
+    {
+        $query = $this->normalizeSearchQuery((string) ($_POST['redirect_q'] ?? ''));
+        $page = max(1, (int) ($_POST['redirect_page'] ?? 1));
+        $parameters = [];
+
+        if ($query !== '') {
+            $parameters['q'] = $query;
+        }
+
+        if ($page > 1) {
+            $parameters['page'] = (string) $page;
+        }
+
+        return '/theses/manage' . ($parameters !== [] ? '?' . http_build_query($parameters) : '');
     }
 
     private function ensureThesesTable(): void

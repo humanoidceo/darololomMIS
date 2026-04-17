@@ -6,6 +6,12 @@ $oldStudentName = trim((string) ($oldStudentName ?? ''));
 $oldAdvisorName = trim((string) ($oldAdvisorName ?? ''));
 $oldYear = trim((string) ($oldYear ?? ''));
 $oldAbstract = trim((string) ($oldAbstract ?? ''));
+$searchQuery = trim((string) ($searchQuery ?? ''));
+$isSearching = $searchQuery !== '';
+$manageBaseParams = [];
+if ($isSearching) {
+    $manageBaseParams['q'] = $searchQuery;
+}
 $contactNotice = 'برای به دست آوردن فایل پی دی اف این پایان نامه با اداره دارالعلوم به تماس شوید.';
 ?>
 
@@ -56,7 +62,46 @@ $contactNotice = 'برای به دست آوردن فایل پی دی اف این
     <div class="news-info">
         <div class="thesis-list-head">
             <h3>فهرست پایان‌نامه‌ها</h3>
-            <p>تمام پایان‌نامه‌های ثبت‌شده در این بخش با صفحه‌بندی ۱۰تایی نمایش داده می‌شوند و از همین‌جا قابل مشاهده یا حذف‌اند.</p>
+            <p>تمام پایان‌نامه‌های ثبت‌شده در این بخش با صفحه‌بندی ۱۰تایی نمایش داده می‌شوند و می‌توانید با جستجو بر اساس نام محصل، استاد رهنما، سال یا متن چکیده سریع‌تر به نتیجه برسید.</p>
+        </div>
+
+        <div class="thesis-search-shell">
+            <form method="get" action="<?= e(url('/theses/manage')) ?>" class="thesis-search-form" role="search">
+                <div class="thesis-search-copy">
+                    <h4>جستجوی حرفه‌ای پایان‌نامه‌ها</h4>
+                    <p>نام محصل، استاد رهنما، سال یا بخشی از متن چکیده را بنویسید تا فهرست دقیق‌تر شود.</p>
+                </div>
+
+                <div class="thesis-search-controls">
+                    <label class="sr-only" for="adminThesisSearch">جستجو در پایان‌نامه‌ها</label>
+                    <input
+                        id="adminThesisSearch"
+                        type="search"
+                        name="q"
+                        class="form-control thesis-search-input"
+                        value="<?= e($searchQuery) ?>"
+                        placeholder="مثال: عبدالرحمن، شیخ صابر، ۱۴۰۴، تفسیر">
+
+                    <div class="thesis-search-actions">
+                        <button type="submit" class="btn btn-default thesis-search-btn">
+                            <i class="fa fa-search" aria-hidden="true"></i>
+                            جستجو
+                        </button>
+                        <?php if ($isSearching): ?>
+                            <a class="btn btn-default thesis-search-reset" href="<?= e(url('/theses/manage')) ?>">پاک‌کردن</a>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </form>
+
+            <div class="thesis-search-meta">
+                <?php if ($isSearching): ?>
+                    نتیجه برای <strong><?= e($searchQuery) ?></strong>:
+                    <?= e(to_persian_number((string) $total)) ?> پایان‌نامه
+                <?php else: ?>
+                    تمام پایان‌نامه‌های ثبت‌شده بدون فیلتر نمایش داده می‌شوند.
+                <?php endif; ?>
+            </div>
         </div>
 
         <?php if (!empty($theses)): ?>
@@ -93,6 +138,8 @@ $contactNotice = 'برای به دست آوردن فایل پی دی اف این
                                 <a class="btn btn-xs btn-primary" href="<?= e(url('/theses/' . $thesisId)) ?>" target="_blank">مشاهده</a>
                                 <form method="post" action="<?= e(url('/theses/' . $thesisId . '/delete')) ?>" class="thesis-delete-form" onsubmit="return confirm('این پایان‌نامه حذف شود؟');">
                                     <?= csrf_field() ?>
+                                    <input type="hidden" name="redirect_q" value="<?= e($searchQuery) ?>">
+                                    <input type="hidden" name="redirect_page" value="<?= e((string) $page) ?>">
                                     <button type="submit" class="btn btn-xs btn-danger">حذف</button>
                                 </form>
                             </td>
@@ -106,16 +153,18 @@ $contactNotice = 'برای به دست آوردن فایل پی دی اف این
                 <span>صفحه <?= e(to_persian_number((string) $page)) ?> از <?= e(to_persian_number((string) $totalPages)) ?> | مجموع <?= e(to_persian_number((string) $total)) ?> پایان‌نامه</span>
                 <div>
                     <?php if ($page > 1): ?>
-                        <a class="btn btn-default btn-sm" href="<?= e(url('/theses/manage?page=' . ($page - 1))) ?>">قبلی</a>
+                        <?php $previousParams = $manageBaseParams + ['page' => $page - 1]; ?>
+                        <a class="btn btn-default btn-sm" href="<?= e(url('/theses/manage?' . http_build_query($previousParams))) ?>">قبلی</a>
                     <?php endif; ?>
                     <?php if ($page < $totalPages): ?>
-                        <a class="btn btn-default btn-sm" href="<?= e(url('/theses/manage?page=' . ($page + 1))) ?>">بعدی</a>
+                        <?php $nextParams = $manageBaseParams + ['page' => $page + 1]; ?>
+                        <a class="btn btn-default btn-sm" href="<?= e(url('/theses/manage?' . http_build_query($nextParams))) ?>">بعدی</a>
                     <?php endif; ?>
                 </div>
             </div>
         <?php else: ?>
             <div class="article-empty-state">
-                هنوز هیچ پایان‌نامه‌ای ثبت نشده است.
+                <?= e($isSearching ? 'هیچ پایان‌نامه‌ای با این جستجو پیدا نشد.' : 'هنوز هیچ پایان‌نامه‌ای ثبت نشده است.') ?>
             </div>
         <?php endif; ?>
     </div>

@@ -5,6 +5,13 @@ $total = max(0, (int) ($total ?? 0));
 $oldTitle = trim((string) ($oldTitle ?? ''));
 $oldAuthor = trim((string) ($oldAuthor ?? ''));
 $oldYear = trim((string) ($oldYear ?? ''));
+$searchQuery = trim((string) ($searchQuery ?? ''));
+$isSearching = $searchQuery !== '';
+$uploadLimits = upload_limits_text();
+$manageBaseParams = [];
+if ($isSearching) {
+    $manageBaseParams['q'] = $searchQuery;
+}
 ?>
 
 <div class="section-title">
@@ -40,7 +47,12 @@ $oldYear = trim((string) ($oldYear ?? ''));
             <div class="form-group">
                 <label>فایل PDF کتاب</label>
                 <input type="file" name="book_pdf" class="form-control" accept=".pdf,application/pdf" required>
-                <small class="field-help">فقط فایل PDF پذیرفته می‌شود.</small>
+                <small class="field-help">
+                    فقط فایل PDF پذیرفته می‌شود.
+                    <?php if ($uploadLimits !== ''): ?>
+                        <?= e($uploadLimits) ?>
+                    <?php endif; ?>
+                </small>
             </div>
 
             <div class="form-actions full book-form-actions">
@@ -55,7 +67,46 @@ $oldYear = trim((string) ($oldYear ?? ''));
     <div class="news-info">
         <div class="book-list-head">
             <h3>فهرست کتاب‌ها</h3>
-            <p>در این بخش کتاب‌های ثبت‌شده را با صفحه‌بندی ۱۰تایی می‌بینید و می‌توانید مطالعه، دانلود یا حذف انجام دهید.</p>
+            <p>در این بخش کتاب‌های ثبت‌شده را با صفحه‌بندی ۱۰تایی می‌بینید و می‌توانید با جستجو بر اساس نام کتاب، مولف یا سال، سریع‌تر به نتیجه برسید.</p>
+        </div>
+
+        <div class="book-search-shell">
+            <form method="get" action="<?= e(url('/library/manage')) ?>" class="book-search-form" role="search">
+                <div class="book-search-copy">
+                    <h4>جستجوی حرفه‌ای کتاب‌ها</h4>
+                    <p>نام کتاب، نام مولف یا سال تالیف را بنویسید تا فهرست فوراً دقیق‌تر شود.</p>
+                </div>
+
+                <div class="book-search-controls">
+                    <label class="sr-only" for="adminBookSearch">جستجو در کتاب‌ها</label>
+                    <input
+                        id="adminBookSearch"
+                        type="search"
+                        name="q"
+                        class="form-control book-search-input"
+                        value="<?= e($searchQuery) ?>"
+                        placeholder="مثال: تفسیر، مولانا، ۱۴۰۲">
+
+                    <div class="book-search-actions">
+                        <button type="submit" class="btn btn-default book-search-btn">
+                            <i class="fa fa-search" aria-hidden="true"></i>
+                            جستجو
+                        </button>
+                        <?php if ($isSearching): ?>
+                            <a class="btn btn-default book-search-reset" href="<?= e(url('/library/manage')) ?>">پاک‌کردن</a>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </form>
+
+            <div class="book-search-meta">
+                <?php if ($isSearching): ?>
+                    نتیجه برای <strong><?= e($searchQuery) ?></strong>:
+                    <?= e(to_persian_number((string) $total)) ?> کتاب
+                <?php else: ?>
+                    تمام کتاب‌های ثبت‌شده بدون فیلتر نمایش داده می‌شوند.
+                <?php endif; ?>
+            </div>
         </div>
 
         <?php if (!empty($books)): ?>
@@ -98,6 +149,8 @@ $oldYear = trim((string) ($oldYear ?? ''));
                                 <a class="btn btn-xs btn-default" href="<?= e(file_url($pdfPath)) ?>" download="<?= e($filename) ?>">دانلود</a>
                                 <form method="post" action="<?= e(url('/library/' . $bookId . '/delete')) ?>" class="book-delete-form" onsubmit="return confirm('این کتاب حذف شود؟');">
                                     <?= csrf_field() ?>
+                                    <input type="hidden" name="redirect_q" value="<?= e($searchQuery) ?>">
+                                    <input type="hidden" name="redirect_page" value="<?= e((string) $page) ?>">
                                     <button type="submit" class="btn btn-xs btn-danger">حذف</button>
                                 </form>
                             </td>
@@ -111,16 +164,18 @@ $oldYear = trim((string) ($oldYear ?? ''));
                 <span>صفحه <?= e(to_persian_number((string) $page)) ?> از <?= e(to_persian_number((string) $totalPages)) ?> | مجموع <?= e(to_persian_number((string) $total)) ?> کتاب</span>
                 <div>
                     <?php if ($page > 1): ?>
-                        <a class="btn btn-default btn-sm" href="<?= e(url('/library/manage?page=' . ($page - 1))) ?>">قبلی</a>
+                        <?php $previousParams = $manageBaseParams + ['page' => $page - 1]; ?>
+                        <a class="btn btn-default btn-sm" href="<?= e(url('/library/manage?' . http_build_query($previousParams))) ?>">قبلی</a>
                     <?php endif; ?>
                     <?php if ($page < $totalPages): ?>
-                        <a class="btn btn-default btn-sm" href="<?= e(url('/library/manage?page=' . ($page + 1))) ?>">بعدی</a>
+                        <?php $nextParams = $manageBaseParams + ['page' => $page + 1]; ?>
+                        <a class="btn btn-default btn-sm" href="<?= e(url('/library/manage?' . http_build_query($nextParams))) ?>">بعدی</a>
                     <?php endif; ?>
                 </div>
             </div>
         <?php else: ?>
             <div class="article-empty-state">
-                هنوز هیچ کتابی در کتابخانه الکترونیکی ثبت نشده است.
+                <?= e($isSearching ? 'هیچ کتابی با این جستجو پیدا نشد.' : 'هنوز هیچ کتابی در کتابخانه الکترونیکی ثبت نشده است.') ?>
             </div>
         <?php endif; ?>
     </div>

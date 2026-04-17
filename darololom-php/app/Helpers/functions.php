@@ -82,6 +82,63 @@ function csrf_field(): string
     return '<input type="hidden" name="_token" value="' . e(csrf_token()) . '">';
 }
 
+function ini_size_to_bytes(string $value): int
+{
+    $value = trim($value);
+    if ($value === '') {
+        return 0;
+    }
+
+    $unit = strtolower(substr($value, -1));
+    $number = (float) $value;
+
+    return match ($unit) {
+        'g' => (int) round($number * 1024 * 1024 * 1024),
+        'm' => (int) round($number * 1024 * 1024),
+        'k' => (int) round($number * 1024),
+        default => (int) round($number),
+    };
+}
+
+function request_content_length(): int
+{
+    return max(0, (int) ($_SERVER['CONTENT_LENGTH'] ?? 0));
+}
+
+function request_exceeds_post_max_size(): bool
+{
+    if (strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')) !== 'POST') {
+        return false;
+    }
+
+    $postMax = ini_size_to_bytes((string) ini_get('post_max_size'));
+    if ($postMax <= 0) {
+        return false;
+    }
+
+    return request_content_length() > $postMax && empty($_POST);
+}
+
+function upload_limits_text(): string
+{
+    $fileLimit = trim((string) ini_get('upload_max_filesize'));
+    $postLimit = trim((string) ini_get('post_max_size'));
+
+    if ($fileLimit === '' && $postLimit === '') {
+        return '';
+    }
+
+    if ($fileLimit !== '' && $postLimit !== '') {
+        return 'حد فعلی سرور برای هر فایل ' . $fileLimit . ' و برای مجموع درخواست ' . $postLimit . ' است.';
+    }
+
+    if ($fileLimit !== '') {
+        return 'حد فعلی سرور برای هر فایل ' . $fileLimit . ' است.';
+    }
+
+    return 'حد فعلی سرور برای مجموع درخواست ' . $postLimit . ' است.';
+}
+
 function flash(string $key, ?string $value = null): ?string
 {
     if ($value !== null) {
@@ -160,6 +217,29 @@ function request_accepts_html(): bool
     }
 
     return str_contains($accept, 'text/html') || str_contains($accept, 'application/xhtml+xml');
+}
+
+function previous_path(string $fallback = '/'): string
+{
+    $referer = trim((string) ($_SERVER['HTTP_REFERER'] ?? ''));
+    if ($referer === '') {
+        return $fallback;
+    }
+
+    $baseHost = parse_url((string) config('base_url', ''), PHP_URL_HOST);
+    $refererHost = parse_url($referer, PHP_URL_HOST);
+    if (is_string($baseHost) && $baseHost !== '' && is_string($refererHost) && $refererHost !== '' && strcasecmp($baseHost, $refererHost) !== 0) {
+        return $fallback;
+    }
+
+    $path = parse_url($referer, PHP_URL_PATH);
+    if (!is_string($path) || $path === '' || !is_safe_post_login_path($path)) {
+        return $fallback;
+    }
+
+    $query = parse_url($referer, PHP_URL_QUERY);
+
+    return $path . (is_string($query) && $query !== '' ? '?' . $query : '');
 }
 
 function is_safe_post_login_path(string $path): bool

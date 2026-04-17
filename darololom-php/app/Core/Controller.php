@@ -21,8 +21,20 @@ abstract class Controller
     {
         $token = $_POST['_token'] ?? '';
         if (!hash_equals(csrf_token(), $token)) {
+            if (request_accepts_html()) {
+                if (request_exceeds_post_max_size()) {
+                    flash('error', 'حجم فایل یا مجموع فایل‌های انتخاب‌شده از حد مجاز سرور بیشتر است. ' . upload_limits_text());
+                } else {
+                    flash('error', 'اعتبار فرم منقضی شده یا درخواست معتبر نیست. لطفاً صفحه را تازه کرده و دوباره تلاش کنید.');
+                }
+
+                $this->redirect(previous_path('/'));
+            }
+
             http_response_code(419);
-            echo 'CSRF token mismatch';
+            echo request_exceeds_post_max_size()
+                ? 'Uploaded data exceeds server limits'
+                : 'CSRF token mismatch';
             exit;
         }
     }

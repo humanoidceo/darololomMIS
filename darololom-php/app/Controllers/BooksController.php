@@ -13,13 +13,17 @@ final class BooksController extends Controller
     public function publicIndex(array $params = []): void
     {
         $this->ensureBooksTable();
+        $searchQuery = $this->normalizeSearchQuery((string) ($_GET['q'] ?? ''));
+        [$whereSql, $searchBindings] = $this->buildSearchFilter($searchQuery);
 
         $page = max(1, (int) ($_GET['page'] ?? 1));
         $pageSize = 10;
         $offset = ($page - 1) * $pageSize;
 
         $db = Database::connection();
-        $countStmt = $db->query('SELECT COUNT(*) FROM books');
+        $countStmt = $db->prepare('SELECT COUNT(*) FROM books' . $whereSql);
+        $this->bindParams($countStmt, $searchBindings);
+        $countStmt->execute();
         $total = (int) $countStmt->fetchColumn();
         $totalPages = max(1, (int) ceil($total / $pageSize));
 
@@ -30,10 +34,11 @@ final class BooksController extends Controller
 
         $stmt = $db->prepare(
             'SELECT *
-             FROM books
+             FROM books' . $whereSql . '
              ORDER BY created_at DESC, id DESC
              LIMIT :limit OFFSET :offset'
         );
+        $this->bindParams($stmt, $searchBindings);
         $stmt->bindValue(':limit', $pageSize, PDO::PARAM_INT);
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
@@ -45,6 +50,7 @@ final class BooksController extends Controller
             'pageSize' => $pageSize,
             'total' => $total,
             'totalPages' => $totalPages,
+            'searchQuery' => $searchQuery,
         ]);
     }
 
@@ -73,6 +79,8 @@ final class BooksController extends Controller
     {
         $this->onlySuperAdmin('تنها سوپر ادمین اجازه مدیریت کتابخانه الکترونیکی را دارد.', '/dashboard');
         $this->ensureBooksTable();
+        $searchQuery = $this->normalizeSearchQuery((string) ($_GET['q'] ?? ''));
+        [$whereSql, $searchBindings] = $this->buildSearchFilter($searchQuery);
 
         $formData = $_SESSION['_old'] ?? [];
         clear_old();
@@ -82,7 +90,9 @@ final class BooksController extends Controller
         $offset = ($page - 1) * $pageSize;
 
         $db = Database::connection();
-        $countStmt = $db->query('SELECT COUNT(*) FROM books');
+        $countStmt = $db->prepare('SELECT COUNT(*) FROM books' . $whereSql);
+        $this->bindParams($countStmt, $searchBindings);
+        $countStmt->execute();
         $total = (int) $countStmt->fetchColumn();
         $totalPages = max(1, (int) ceil($total / $pageSize));
 
@@ -93,10 +103,11 @@ final class BooksController extends Controller
 
         $stmt = $db->prepare(
             'SELECT *
-             FROM books
+             FROM books' . $whereSql . '
              ORDER BY created_at DESC, id DESC
              LIMIT :limit OFFSET :offset'
         );
+        $this->bindParams($stmt, $searchBindings);
         $stmt->bindValue(':limit', $pageSize, PDO::PARAM_INT);
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
@@ -112,6 +123,7 @@ final class BooksController extends Controller
             'oldTitle' => (string) ($formData['title'] ?? ''),
             'oldAuthor' => (string) ($formData['author'] ?? ''),
             'oldYear' => (string) ($formData['publication_year'] ?? ''),
+            'searchQuery' => $searchQuery,
         ]);
     }
 
@@ -198,12 +210,13 @@ final class BooksController extends Controller
         $this->onlySuperAdmin('تنها سوپر ادمین اجازه مدیریت کتابخانه الکترونیکی را دارد.', '/dashboard');
         $this->csrfCheck();
         $this->ensureBooksTable();
+        $redirectUrl = $this->manageRedirectUrl();
 
         $id = $this->intParam($params, 'id');
         $book = $this->bookById($id);
         if (!$book) {
             flash('error', 'کتاب مورد نظر پیدا نشد.');
-            $this->redirect('/library/manage');
+            $this->redirect($redirectUrl);
         }
 
         $stmt = Database::connection()->prepare('DELETE FROM books WHERE id = :id');
@@ -212,7 +225,7 @@ final class BooksController extends Controller
         $this->deleteStoredFile((string) ($book['pdf_file_path'] ?? ''));
 
         flash('success', 'کتاب با موفقیت حذف شد.');
-        $this->redirect('/library/manage');
+        $this->redirect($redirectUrl);
     }
 
     private function bookById(int $id): ?array
@@ -246,6 +259,91 @@ final class BooksController extends Controller
         }
 
         return null;
+    }
+
+    private function normalizeSearchQuery(string $query): string
+    {
+        $query = preg_replace('/\s+/u', ' ', trim($query));
+
+        return is_string($query) ? $query : '';
+    }
+
+    private function buildSearchFilter(string $searchQuery): array
+    {
+        if ($searchQuery === '') {
+            return ['', []];
+        }
+
+        $terms = preg_split('/\s+/u', $searchQuery, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        if ($terms === []) {
+            return ['', []];
+        }
+
+        $clauses = [];
+        $bindings = [];
+
+        foreach (array_values($terms) as $index => $term) {
+            $term = $this->normalizeSearchToken($term);
+            $titleParam = ':search_title_' . $index;
+            $authorParam = ':search_author_' . $index;
+            $yearParam = ':search_year_' . $index;
+            $clauses[] = '(title LIKE ' . $titleParam . ' OR author LIKE ' . $authorParam . ' OR CAST(publication_year AS CHAR) LIKE ' . $yearParam . ')';
+            $bindings[$titleParam] = '%' . $term . '%';
+            $bindings[$authorParam] = '%' . $term . '%';
+            $bindings[$yearParam] = '%' . $term . '%';
+        }
+
+        return [' WHERE ' . implode(' AND ', $clauses), $bindings];
+    }
+
+    private function bindParams(\PDOStatement $stmt, array $bindings): void
+    {
+        foreach ($bindings as $name => $value) {
+            $stmt->bindValue($name, $value, PDO::PARAM_STR);
+        }
+    }
+
+    private function normalizeSearchToken(string $value): string
+    {
+        return strtr($value, [
+            '۰' => '0',
+            '۱' => '1',
+            '۲' => '2',
+            '۳' => '3',
+            '۴' => '4',
+            '۵' => '5',
+            '۶' => '6',
+            '۷' => '7',
+            '۸' => '8',
+            '۹' => '9',
+            '٠' => '0',
+            '١' => '1',
+            '٢' => '2',
+            '٣' => '3',
+            '٤' => '4',
+            '٥' => '5',
+            '٦' => '6',
+            '٧' => '7',
+            '٨' => '8',
+            '٩' => '9',
+        ]);
+    }
+
+    private function manageRedirectUrl(): string
+    {
+        $query = $this->normalizeSearchQuery((string) ($_POST['redirect_q'] ?? ''));
+        $page = max(1, (int) ($_POST['redirect_page'] ?? 1));
+        $parameters = [];
+
+        if ($query !== '') {
+            $parameters['q'] = $query;
+        }
+
+        if ($page > 1) {
+            $parameters['page'] = (string) $page;
+        }
+
+        return '/library/manage' . ($parameters !== [] ? '?' . http_build_query($parameters) : '');
     }
 
     private function ensureBooksTable(): void

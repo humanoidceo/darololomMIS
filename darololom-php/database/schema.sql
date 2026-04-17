@@ -211,6 +211,21 @@ CREATE TABLE IF NOT EXISTS articles (
     CONSTRAINT fk_articles_created_by FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS books (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    author VARCHAR(255) NOT NULL,
+    publication_year SMALLINT UNSIGNED NOT NULL,
+    cover_image_path VARCHAR(255) NOT NULL,
+    pdf_file_path VARCHAR(255) NOT NULL,
+    created_by INT UNSIGNED NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_books_title (title),
+    INDEX idx_books_author (author),
+    INDEX idx_books_year (publication_year),
+    CONSTRAINT fk_books_created_by FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
 SET @has_teachers_current_street := (
     SELECT COUNT(*)
     FROM information_schema.columns

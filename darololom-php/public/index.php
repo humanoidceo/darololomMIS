@@ -31,9 +31,15 @@ $publicRoutes = [
     'GET:/login',
     'POST:/login',
     'GET:/articles',
+    'GET:/library',
 ];
 
-if (!in_array($method . ':' . $path, $publicRoutes, true) && !auth_check()) {
+$isPublicDynamicRoute = $method === 'GET'
+    && (
+        preg_match('#^/library/[0-9]+$#', $path) === 1
+    );
+
+if (!in_array($method . ':' . $path, $publicRoutes, true) && !$isPublicDynamicRoute && !auth_check()) {
     if (should_remember_intended_path($method, $path)) {
         $_SESSION['_intended'] = $path;
     }

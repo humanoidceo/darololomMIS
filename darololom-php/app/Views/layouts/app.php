@@ -50,21 +50,22 @@ $footerAddress = (string) (($footerContact['address'] ?? '') !== '' ? $footerCon
     <header class="site-header">
         <div class="container">
             <div class="site-header-main">
-                <div class="site-header-copy">
-                    <h1 class="site-header-title">دارالعلوم عالی الحاج سید منصور نادری</h1>
-                    <nav class="site-header-quick-nav" aria-label="گزینه‌های هدر">
-                        <a href="<?= e(url('/')) ?>">خانه</a>
-                        <a href="<?= e(url('/articles')) ?>">مقالات</a>
-                        <a href="<?= e(url('/library')) ?>">کتابخانه الکترونیکی</a>
-                        <a href="<?= e(url('/theses')) ?>">پایان‌نامه‌ها</a>
-                        <a href="<?= e(url('/#about-us')) ?>">درباره ما</a>
-                        <a href="<?= e(url('/#contact-us')) ?>">تماس با ما</a>
-                    </nav>
-                </div>
+                <div class="site-header-identity">
                     <span class="site-header-logo-wrap">
                         <img src="<?= e(url('/assets/images/logo.jpg')) ?>" alt="لوگوی دارالعلوم" class="site-header-logo" onerror="this.style.display='none';">
                     </span>
-                    
+                    <div class="site-header-copy">
+                        <h3 class="site-header-title">دارالعلوم عالی الحاج سید منصور نادری</h3>
+                    </div>
+                </div>
+                <nav class="site-header-quick-nav" aria-label="گزینه‌های هدر">
+                    <a href="<?= e(url('/')) ?>">خانه</a>
+                    <a href="<?= e(url('/articles')) ?>">مقالات</a>
+                    <a href="<?= e(url('/library')) ?>">کتابخانه الکترونیکی</a>
+                    <a href="<?= e(url('/theses')) ?>">پایان‌نامه‌ها</a>
+                    <a href="<?= e(url('/#about-us')) ?>">درباره ما</a>
+                    <a href="<?= e(url('/#contact-us')) ?>">تماس با ما</a>
+                </nav>
             </div>
         </div>
     </header>
